@@ -1,0 +1,27 @@
+dev:
+  GRAPH_API_ENDPOINT: 'https://graph.microsoft.com/v1.0'
+  GRAPH_API__AUTH: 'https://login.microsoftonline.com'
+  CLIENT_ID: '27ce20df-bdfa-4c24-90e2-cf6ba7ffa283'
+  CLIENT_SECRET: 'Vt68Q~63JOXiBjmW3.fk2V9igA_CY3ngnXlkAa5D'
+  TENANT_ID: '81844cf8-6426-4db3-923d-0945ee101579'
+  SCOPES: "Calendars.ReadWrite.Shared Calendars.ReadBasic Calendars.Read Calendars.ReadWrite Mail.ReadWrite Mail.Read Mail.Send"
+  REDIRECT_URL: "https://127.0.0.1:8001/"
+  AUTHORIZATION_URL: 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize'
+  TOKEN_URL: 'https://login.microsoftonline.com/common/oauth2/v2.0/token'
+
+
+qa:
+  GRAPH_API_ENDPOINT: 'https://graph.microsoft.com/v1.0'
+  GRAPH_API__AUTH: 'https://login.microsoftonline.com'
+  SCOPE: 'https://graph.microsoft.com/.default'
+  CLIENT_ID: 'your_client_id'
+  CLIENT_SECRET: 'your_client_secret'
+  TENANT_ID: 'your_tenant_id'
+
+prod:
+  GRAPH_API_ENDPOINT: 'https://graph.microsoft.com/v1.0'
+  GRAPH_API__AUTH: 'https://login.microsoftonline.com'
+  SCOPE: 'https://graph.microsoft.com/.default'
+  CLIENT_ID: 'your_client_id'
+  CLIENT_SECRET: 'your_client_secret'
+  TENANT_ID: 'your_tenant_id'
