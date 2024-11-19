@@ -40,17 +40,17 @@ class EmailServices:
         response.raise_for_status()
         return "Message sent completed"
 
-    async def get_email(self, config):
+    async def get_email(self, config, start_date, end_date):
         """Fetch all meetings for the user."""
         AllEmails =[]
-        url = f"{config['GRAPH_API_ENDPOINT']}/me/messages"
+        url = f"{config['GRAPH_API_ENDPOINT']}/me/messages?$filter=receivedDateTime ge {start_date}T00:00:00Z and receivedDateTime le {end_date}T23:59:59Z"
         response = requests.get(url, headers=self.headers)
         response.raise_for_status()
         email = response.json().get('value', [])
         for email in email:
             # Collect email details
             email_data = {
-                "email_id": email.get("id","No id"),
+                "email_id": email.get("id", "No id"),
                 "subject": email.get("subject", "No Subject"),
                 "sender": email.get("from", {}).get("emailAddress", {}).get("address", "No Sender"),
                 "receivedDateTime": email.get("receivedDateTime", "No Date"),
@@ -97,7 +97,6 @@ class EmailServices:
             },
             "saveToSentItems": "true"  # Save the sent email to Sent Items
         }
-        import pdb;pdb.set_trace()
         response = requests.post(url, headers=self.headers, json=email_data)
         response.raise_for_status()
         return response.json()

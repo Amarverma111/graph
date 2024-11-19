@@ -3,6 +3,11 @@ from datetime import datetime
 from typing import List, Tuple, Optional
 from quart import jsonify
 
+
+class GetEmailRequest(BaseModel):
+    start_date: str
+    end_date: str
+
 class EmailAddress(BaseModel):
     address: str
 

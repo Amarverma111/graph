@@ -65,7 +65,8 @@ class MeetingServices:
 
     async def get_meetings(self, config, start_date,end_date):
         """Fetch all meetings for the user."""
-        url = f"{config['GRAPH_API_ENDPOINT']}/me/events?$filter=start/dateTime ge '{start_date}' and end/dateTime le '{end_date}'"
+        # url = f"{config['GRAPH_API_ENDPOINT']}/me/events?$filter=start/dateTime ge '{start_date}' and end/dateTime le '{end_date}'"
+        url =f"{config['GRAPH_API_ENDPOINT']}/me/calendarView?startDateTime={start_date}T00:00:00Z&endDateTime={end_date}T23:59:59Z "
         response = requests.get(url, headers=self.headers)
         response.raise_for_status()
         events = response.json().get("value", [])

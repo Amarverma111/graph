@@ -12,7 +12,18 @@ class TaskServices:
 
     async def get_task(self, config):
         """Fetch all meetings for the user."""
-        url = f"{config['GRAPH_API_ENDPOINT']}/todo/lists"
+        url = f"{config['GRAPH_API_ENDPOINT']}/me/todo/lists"
         response = requests.get(url, headers=self.headers)
+        response.raise_for_status()
+        return response.json()
+
+    async def creat_task(self, config, displayName):
+        """Fetch all meetings for the user."""
+        url = f"{config['GRAPH_API_ENDPOINT']}/me/todo/lists"
+        body ={
+            "displayName": displayName
+        }
+
+        response = requests.post(url, headers=self.headers, json=body)
         response.raise_for_status()
         return response.json()

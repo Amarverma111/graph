@@ -7,7 +7,8 @@ from service.EmailService import EmailServices
 from service.TaskService import  TaskServices
 from contracts.meeting import CreateMeetingRequest, MeetingResponse, DeleteMeetingRequest, UpdateMeetingRequest, RescheduleMeetingRequest,\
     AddParticipantsRequest, error_response, success_response, GetMeetingResponse, GetMeetingRequest
-from contracts.email import CreateEmailRequest, DeleteEmailRequest, SendEmailRequest, ForwardEmailRequest, ReplyEmailRequest, MessageSentResponse
+from contracts.email import CreateEmailRequest, DeleteEmailRequest, SendEmailRequest, ForwardEmailRequest, ReplyEmailRequest, MessageSentResponse, GetEmailRequest
+from contracts.task import TaskResponse, TaskCreateHeadingRequest, TaskCreateSubRequest, TaskCreateResponse
 from pydantic import ValidationError
 from data_source.Graph_api import MSFTGraph
 from urllib.parse import urlencode
@@ -42,7 +43,7 @@ async def login():
 async def callback():
     # Step 2: Handle the response from Microsoft
     # data = await request.get_json()
-    code ="M.C542_BAY.2.U.bb006a90-cf60-3c7f-cdeb-5c53edfcb6f5"
+    code ="M.C542_BL2.2.U.b6f00161-23f5-fa5f-cc63-61a41658ec03"
     if not code:
         return "Authorization code not found in the response."
 
@@ -324,10 +325,18 @@ async def api_add_participants():
 @bp.route('/get_email', methods=['GET'])
 async def api_get_email():
     try:
+        data = await request.get_json()
+        get_request = GetEmailRequest(**data)
+        start_date = get_request.start_date
+        end_date = get_request.end_date
+
+        if not all([start_date, end_date]):
+            return error_response("Missing required parameters", 400)
+
         # Simulate fetching access token
         access_token = MSFTGraph(config['CLIENT_ID'], config['CLIENT_SECRET'], config['TENANT_ID']).get_access_token(config)
         # Simulate fetching meetings
-        get_email = await EmailServices(access_token).get_email(config)
+        get_email = await EmailServices(access_token).get_email(config, start_date, end_date)
         # Construct a successful response with the list of meetings
         response_data = GetMeetingResponse(
             status="success",
@@ -525,12 +534,10 @@ async def email_with_attachment():
 
         # Prepare the attachments (base64 encode the files)
         attachment_data = []
-        # for file_path in attachments:
-        #     # Read and base64 encode each file
-        #     with open(file_path, "rb") as f:
-        #         file_content = base64.b64encode(f.read()).decode('utf-8')
-        with open('C:/Users/amar9/Downloads/Dirgh_Resume.pdf', 'rb') as f:
-            file_content = base64.b64encode(f.read()).decode('utf-8')
+        for file_path in attachments:
+            # Read and base64 encode each file
+            with open(file_path, "rb") as f:
+                file_content = base64.b64encode(f.read()).decode('utf-8')
 
         # Simulate sending the email
         send_attachment_response = await EmailServices(access_token).\
@@ -568,7 +575,7 @@ async def task_find():
         # Simulate fetching meetings
         task_data = await TaskServices(access_token).get_task(config)
         # Construct a successful response with the list of meetings
-        response_data = GetMeetingResponse(
+        response_data = TaskResponse(
             status="success",
             message="Meetings retrieved successfully",
             data=task_data
@@ -583,6 +590,72 @@ async def task_find():
         # Handle any unexpected errors
         return error_response(str(e), 500)
 
+@bp.route('/create-main_task', methods=['POST'])
+async def task_create_name():
+    try:
+        # Simulate fetching access token
+        data = await request.get_json()
+        displayName_value = TaskCreateHeadingRequest(**data)
+
+        # Access individual attributes from the validated model
+        displayName = displayName_value.displayName
+
+        if not all([displayName]):
+            return error_response("Missing required parameters", 400)
+
+        access_token = MSFTGraph(config['CLIENT_ID'], config['CLIENT_SECRET'],
+                                 config['TENANT_ID']).get_access_token(config)
+        # Simulate fetching meetings
+        task_data = await TaskServices(access_token).creat_task(config, displayName)
+        # Construct a successful response with the list of meetings
+        response_data = TaskCreateResponse(
+            status="success",
+            message="Task Create successfully",
+            data=task_data
+        )
+        return jsonify(response_data.dict()), 200
+
+    except requests.exceptions.RequestException as e:
+        # Handle request exceptions
+        return error_response(str(e), 500)
+
+    except Exception as e:
+        # Handle any unexpected errors
+        return error_response(str(e), 500)
+
+@bp.route('/sub_task', methods=['POST'])
+async def task_create_sub_name():
+    try:
+        # Simulate fetching access token
+        data = await request.get_json()
+        value = TaskCreateSubRequest(**data)
+
+        # Access individual attributes from the validated model
+        title = value.title
+        todo_list_id = value.todo_list_id
+
+        if not all([title, todo_list_id]):
+            return error_response("Missing required parameters", 400)
+
+        access_token = MSFTGraph(config['CLIENT_ID'], config['CLIENT_SECRET'],
+                                 config['TENANT_ID']).get_access_token(config)
+        # Simulate fetching meetings
+        task_data = await TaskServices(access_token).creat_task(config, title)
+        # Construct a successful response with the list of meetings
+        response_data = TaskCreateResponse(
+            status="success",
+            message="Task Create successfully",
+            data=task_data
+        )
+        return jsonify(response_data.dict()), 200
+
+    except requests.exceptions.RequestException as e:
+        # Handle request exceptions
+        return error_response(str(e), 500)
+
+    except Exception as e:
+        # Handle any unexpected errors
+        return error_response(str(e), 500)
 
 def create_app():
     app = Quart(__name__)
