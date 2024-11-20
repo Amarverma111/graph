@@ -45,7 +45,7 @@ async def callback():
     # data = await request.get_json()
     code ="M.C542_BL2.2.U.b6f00161-23f5-fa5f-cc63-61a41658ec03"
     if not code:
-        return "Authorization code not found in the response."
+        return "Authorization code not found in the response.",403
 
     # Step 3: Exchange authorization code for an access token
     token_data = {
@@ -63,7 +63,7 @@ async def callback():
     if 'access_token' not in token_json:
         return f"Error: {token_json.get('error_description', 'Unknown error')}"
     access_token = token_json['access_token']
-    return f"Access Token: {access_token}"
+    return {f"Access Token: {access_token}"},200
 
 
 @bp.route('/health', methods=['GET'])
