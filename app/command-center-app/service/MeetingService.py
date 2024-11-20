@@ -104,7 +104,14 @@ class MeetingServices:
             print(f"Error details: {response.text}")
             return []  # Return an empty list or handle as needed
         response.raise_for_status()
-        events = response.json().get("value", [])
+        try:
+            events = response.json().get("value", [])
+            if not isinstance(events, list):  # Ensure events is a list
+                logging.error("Unexpected API response format.")
+                return []
+        except ValueError:
+            logging.error("Failed to parse JSON response.")
+            return []
 
         return [
             {
