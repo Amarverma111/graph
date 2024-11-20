@@ -4,8 +4,12 @@ from typing import List, Tuple
 from quart import jsonify
 
 class GetMeetingRequest(BaseModel):
-    start_date: str
-    end_date: str
+    start_date: datetime
+    end_date: datetime
+    @classmethod
+    def parse_date(cls, value: str) -> datetime:
+        # Ensure the date format you expect; example below
+        return datetime.strptime(value, "%Y-%m-%d")
 
 class CreateMeetingRequest(BaseModel):
     subject: str
