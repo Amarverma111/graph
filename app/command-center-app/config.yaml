@@ -8,6 +8,10 @@ dev:
   REDIRECT_URL: "https://127.0.0.1:8001/"
   AUTHORIZATION_URL: 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize'
   TOKEN_URL: 'https://login.microsoftonline.com/common/oauth2/v2.0/token'
+  AUTHORIZATION_HEADER: "Authorization"
+  BEARER_PREFIX: "Bearer "
+  CONTENT_TYPE_HEADER: "Content-Type"
+  CONTENT_TYPE: "application/json"
 
 
 qa:

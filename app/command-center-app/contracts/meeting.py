@@ -2,10 +2,11 @@ from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import List, Tuple
 from quart import jsonify
+from uuid import UUID
 
 class GetMeetingRequest(BaseModel):
-    start_date: str
-    end_date: str
+    start_date: datetime
+    end_date: datetime
 
 class CreateMeetingRequest(BaseModel):
     subject: str
@@ -26,6 +27,11 @@ class GetMeetingResponse(BaseModel):
 class DeleteMeetingRequest(BaseModel):
     meeting_id: str
     confirm: str
+
+class DeleteMeetingResponse(BaseModel):
+    status: str
+    message: str
+    data: List[dict]
 
 class UpdateMeetingRequest(BaseModel):
     meeting_id: str
