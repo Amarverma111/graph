@@ -5,14 +5,16 @@ from service.MeetingService import MeetingServices
 from service.extension.load_config_yaml import load_config
 from service.EmailService import EmailServices
 from service.TaskService import TaskServices
+from service.whoamiservice import WhoAmIService
+from Helper.HttpHelper import HttpStatusCode
+from pydantic import ValidationError
+from urllib.parse import urlencode
 from contracts.meeting import CreateMeetingRequest, MeetingResponse, DeleteMeetingRequest, UpdateMeetingRequest, RescheduleMeetingRequest,\
     AddParticipantsRequest,  GetMeetingResponse, GetMeetingRequest, DeleteMeetingResponse
 from contracts.email import CreateEmailRequest, DeleteEmailRequest, SendEmailRequest, ForwardEmailRequest, ReplyEmailRequest, MessageSentResponse, GetEmailRequest
 from contracts.task import TaskResponse, TaskCreateHeadingRequest, TaskCreateSubRequest, TaskCreateResponse, \
     TaskGeTSubRequest
-from pydantic import ValidationError
-from data_source.Graph_api import MSFTGraph
-from urllib.parse import urlencode
+
 
 
 # Load configuration based on environment
@@ -40,13 +42,9 @@ async def login():
 async def callback():
     # Step 2: Handle the response from Microsoft
     # data = await request.get_json()
-    code ="M.C542_SN1.2.U.4adfa629-237e-98cc-1285-5a19a2ddb8da"
+    code ="M.C542_BAY.2.U.e325a680-11e8-cdf0-c0ef-9df1cb62c362"
     if not code:
-<<<<<<< HEAD
         return "Authorization code not found in the response.", 403
-=======
-        return "Authorization code not found in the response.",403
->>>>>>> 026bc25e39e059817223e71c3273b813810c36e4
 
     # Step 3: Exchange authorization code for an access token
     token_data = {
@@ -64,11 +62,7 @@ async def callback():
     if 'access_token' not in token_json:
         return f"Error: {token_json.get('error_description', 'Unknown error')}", 401
     access_token = token_json['access_token']
-<<<<<<< HEAD
     return f"Access Token: {access_token}", 200
-=======
-    return {f"Access Token: {access_token}"},200
->>>>>>> 026bc25e39e059817223e71c3273b813810c36e4
 
 
 @bp.route('/health', methods=['GET'])
@@ -78,27 +72,28 @@ async def health_checkup():
             status="success",
             message="API IS WORKING FINE !",
             data={})
-        return jsonify(response.dict()), 200
+        return jsonify(response.dict()), HttpStatusCode.OK.value
     except Exception as e:
         response = MeetingResponse(
             status="error",
             message="API IS NOT WORKING!",
             data={})
-        return jsonify(response.dict()), 500
+        return jsonify(response.dict()), HttpStatusCode.INTERNAL_SERVER_ERROR.value
 
 
 @bp.route('/get_meetings', methods=['GET'])
 async def api_get_meetings():
     try:
         data = await request.get_json()
-        access_token = MSFTGraph(config['CLIENT_ID'], config['CLIENT_SECRET'], config['TENANT_ID']).get_access_token(config)
+        headers = request.headers
+        access_token = WhoAmIService(headers, config).get_access_token()
         meetings_data = await MeetingServices(access_token, config).get_meetings(GetMeetingRequest(**data))
 
         # Construct the successful response with the list of meetings
-        return jsonify(meetings_data.dict()), 200
+        return jsonify(meetings_data.dict()), HttpStatusCode.OK.value
 
     except requests.exceptions.RequestException as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return jsonify({"status": "error", "message": str(e)}), HttpStatusCode.INTERNAL_SERVER_ERROR.value
 
 
 @bp.route('/create_meeting', methods=['POST'])
@@ -106,27 +101,26 @@ async def api_create_meeting():
     try:
         # Parse and validate request data using the CreateMeetingRequest model
         data = await request.get_json()
-
+        headers = request.headers
         # Simulate access token fetching
-        access_token = MSFTGraph(config['CLIENT_ID'], config['CLIENT_SECRET'], config['TENANT_ID']).get_access_token(config)
-
+        access_token = WhoAmIService(headers, config).get_access_token()
         # Simulate creating the meeting
         meeting_response_data = await MeetingServices(access_token, config).create_meeting(CreateMeetingRequest(**data))
 
         # Return the response from the create_meeting method, which includes success or error message
-        return jsonify(meeting_response_data.dict()), 200
+        return jsonify(meeting_response_data.dict()), HttpStatusCode.OK.value
 
     except ValidationError as e:
         # Handle validation errors from Pydantic, including missing fields
-        return jsonify({"status": "error", "message": "Invalid data: " + str(e)}), 400
+        return jsonify({"status": "error", "message": "Invalid data: " + str(e)}), HttpStatusCode.BAD_REQUEST.value
 
     except requests.exceptions.RequestException as e:
         # Handle any request exceptions
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return jsonify({"status": "error", "message": str(e)}), HttpStatusCode.INTERNAL_SERVER_ERROR.value.value
 
     except Exception as e:
         # Handle any unexpected errors
-        return jsonify({"status": "error", "message": "An unexpected error occurred: " + str(e)}), 500
+        return jsonify({"status": "error", "message": "An unexpected error occurred: " + str(e)}), HttpStatusCode.INTERNAL_SERVER_ERROR.value
 
 
 
@@ -135,10 +129,9 @@ async def api_delete_meeting():
     try:
         # Parse and validate the request data using the DeleteMeetingRequest model
         data = await request.get_json()
-
-        # Simulate fetching access token
-        access_token = MSFTGraph(config['CLIENT_ID'], config['CLIENT_SECRET'], config['TENANT_ID']).get_access_token(config)
-
+        headers = request.headers
+        # Simulate access token fetching
+        access_token = WhoAmIService(headers, config).get_access_token()
         # Simulate deleting the meeting
         deletion_response = await MeetingServices(access_token, config).delete_meeting(DeleteMeetingRequest(**data))
 
@@ -149,15 +142,15 @@ async def api_delete_meeting():
             data=[deletion_response.dict()]  # Convert to dict here
         )
 
-        return jsonify(response_data.dict()), 200
+        return jsonify(response_data.dict()), HttpStatusCode.OK.value
 
     except ValidationError as e:
         # Handle validation errors from Pydantic, including missing fields
-        return jsonify({"status": "error", "message": "Invalid data: " + str(e)}), 400
+        return jsonify({"status": "error", "message": "Invalid data: " + str(e)}), HttpStatusCode.BAD_REQUEST.value
 
     except requests.exceptions.RequestException as e:
         # Handle any request exceptions
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return jsonify({"status": "error", "message": str(e)}), HttpStatusCode.INTERNAL_SERVER_ERROR.value
 
 
 
@@ -165,75 +158,76 @@ async def api_delete_meeting():
 async def api_update_meeting():
     try:
         # Parse the request data and validate it against the UpdateMeetingRequest model
-        data = await request.get_json()
-        # Attempt to update the meeting using the service
-        access_token = MSFTGraph(config['CLIENT_ID'], config['CLIENT_SECRET'], config['TENANT_ID']).get_access_token(config)
+        data = await request.get_json()        # Attempt to update the meeting using the service
+        headers = request.headers
+        # Simulate access token fetching
+        access_token = WhoAmIService(headers, config).get_access_token()
         updated_meeting_response = await MeetingServices(access_token, config).update_meeting(UpdateMeetingRequest(**data))
 
         # Return the response from the create_meeting method, which includes success or error message
-        return jsonify(updated_meeting_response.dict()), 200
+        return jsonify(updated_meeting_response.dict()), HttpStatusCode.OK.value
 
     except ValidationError as e:
         # Handle validation errors from Pydantic, including missing fields
-        return jsonify({"status": "error", "message": "Invalid data: " + str(e)}), 400
+        return jsonify({"status": "error", "message": "Invalid data: " + str(e)}), HttpStatusCode.BAD_REQUEST.value
 
     except requests.exceptions.RequestException as e:
         # Handle any request exceptions
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return jsonify({"status": "error", "message": str(e)}), HttpStatusCode.INTERNAL_SERVER_ERROR.value
 
     except Exception as e:
         # Handle any unexpected errors
-        return jsonify({"status": "error", "message": "An unexpected error occurred: " + str(e)}), 500
+        return jsonify({"status": "error", "message": "An unexpected error occurred: " + str(e)}), HttpStatusCode.INTERNAL_SERVER_ERROR.value
 
 
 @bp.route('/reschedule_meeting', methods=['PUT'])
 async def api_reschedule_meeting():
     try:
-        data = await request.get_json()
-        # Attempt to reschedule the meeting using the service
-        access_token = MSFTGraph(config['CLIENT_ID'], config['CLIENT_SECRET'], config['TENANT_ID']).get_access_token(config)
+        data = await request.get_json()  # Attempt to update the meeting using the service
+        headers = request.headers
+        # Simulate access token fetching
+        access_token = WhoAmIService(headers, config).get_access_token()
         rescheduled_meeting_response = await MeetingServices(access_token, config).reschedule_meeting(RescheduleMeetingRequest(**data))
 
         # Return the response from the create_meeting method, which includes success or error message
-        return jsonify(rescheduled_meeting_response.dict()), 200
+        return jsonify(rescheduled_meeting_response.dict()), HttpStatusCode.OK.value
 
     except ValidationError as e:
         # Handle validation errors from Pydantic, including missing fields
-        return jsonify({"status": "error", "message": "Invalid data: " + str(e)}), 400
+        return jsonify({"status": "error", "message": "Invalid data: " + str(e)}), HttpStatusCode.BAD_REQUEST
 
     except requests.exceptions.RequestException as e:
         # Handle any request exceptions
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return jsonify({"status": "error", "message": str(e)}), HttpStatusCode.BAD_REQUEST.value
 
     except Exception as e:
         # Handle any unexpected errors
-        return jsonify({"status": "error", "message": "An unexpected error occurred: " + str(e)}), 500
+        return jsonify({"status": "error", "message": "An unexpected error occurred: " + str(e)}), HttpStatusCode.INTERNAL_SERVER_ERROR.value
 
 # Add Participants to Meeting
 @bp.route('/add_participants', methods=['PUT'])
 async def api_add_participants():
     try:
         # Parse the request data and validate it against the UpdateMeetingRequest model
-        data = await request.get_json()
-        # Attempt to update the meeting using the service
-        access_token = MSFTGraph(config['CLIENT_ID'], config['CLIENT_SECRET'], config['TENANT_ID']).get_access_token(
-            config)
-        updated_meeting_response = await MeetingServices(access_token, config).add_participate_update(
-            AddParticipantsRequest(**data))
+        data = await request.get_json()  # Attempt to update the meeting using the service
+        headers = request.headers
+        # Simulate access token fetching
+        access_token = WhoAmIService(headers, config).get_access_token()
+        updated_meeting_response = await MeetingServices(access_token, config).add_participate_update(AddParticipantsRequest(**data))
 
-        return jsonify(updated_meeting_response.dict()), 200
+        return jsonify(updated_meeting_response.dict()), HttpStatusCode.OK.value
 
     except ValidationError as e:
         # Handle validation errors from Pydantic, including missing fields
-        return jsonify({"status": "error", "message": "Invalid data: " + str(e)}), 400
+        return jsonify({"status": "error", "message": "Invalid data: " + str(e)}), HttpStatusCode.BAD_REQUEST.value
 
     except requests.exceptions.RequestException as e:
         # Handle any request exceptions
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return jsonify({"status": "error", "message": str(e)}), HttpStatusCode.INTERNAL_SERVER_ERROR.value
 
     except Exception as e:
         # Handle any unexpected errors
-        return jsonify({"status": "error", "message": "An unexpected error occurred: " + str(e)}), 500
+        return jsonify({"status": "error", "message": "An unexpected error occurred: " + str(e)}), HttpStatusCode.INTERNAL_SERVER_ERROR.value
 
 
 # # EMAIL START

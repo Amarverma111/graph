@@ -7,13 +7,6 @@ from uuid import UUID
 class GetMeetingRequest(BaseModel):
     start_date: datetime
     end_date: datetime
-<<<<<<< HEAD
-=======
-    @classmethod
-    def parse_date(cls, value: str) -> datetime:
-        # Ensure the date format you expect; example below
-        return datetime.strptime(value, "%Y-%m-%d")
->>>>>>> 026bc25e39e059817223e71c3273b813810c36e4
 
 class CreateMeetingRequest(BaseModel):
     subject: str

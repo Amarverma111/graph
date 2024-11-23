@@ -1,5 +1,5 @@
 from contracts.meeting import MeetingResponse, GetMeetingResponse, DeleteMeetingResponse
-from contracts.HttpHelper import HttpHelper
+from Helper.HttpHelper import HttpHelper
 
 class MeetingServices:
     def __init__(self, access_token, config):
@@ -96,28 +96,6 @@ class MeetingServices:
                 } for name, email in participants
             ]
         }
-<<<<<<< HEAD
-=======
-    try:
-        response = requests.post(url, headers=self.headers, json=meeting_data)
-        response.raise_for_status()  # Raise an error for non-200 status codes
-        return response.json()  # Process the successful response
-    except requests.exceptions.HTTPError as http_err:
-        print(f"HTTP error occurred: {http_err} - Status code: {response.status_code}")
-        # Additional handling based on status code
-        if response.status_code == 400:
-            print("Bad Request: Check the meeting_data payload.")
-        elif response.status_code == 401:
-            print("Unauthorized: Check your API key or authentication headers.")
-        elif response.status_code == 500:
-            print("Server error: Try again later or contact support.")
-        else:
-            print("An unexpected error occurred.")
-        return None
-    except requests.exceptions.RequestException as req_err:
-        print(f"Request error occurred: {req_err}")
-        return None
->>>>>>> 026bc25e39e059817223e71c3273b813810c36e4
 
         # Send the POST request to create the meeting
         # response = requests.post(url, headers=self.headers, json=meeting_data)
@@ -177,7 +155,6 @@ class MeetingServices:
                 } for name, email in participants
             ]
         }
-<<<<<<< HEAD
         response_data = await self.http_helper.patch(url, data=updated_meeting_data)
         if response_data.get("status") == "error":
             return MeetingResponse(
@@ -192,60 +169,6 @@ class MeetingServices:
             data=response_data
         )
 
-=======
-    try:
-        response = requests.patch(url, headers=self.headers, json=updated_meeting_data)
-        response.raise_for_status()  # Raise an error for non-200 status codes
-        return response.json()  # Process the successful response
-    except requests.exceptions.HTTPError as http_err:
-        print(f"HTTP error occurred: {http_err} - Status code: {response.status_code}")
-        # Additional handling based on status code
-        if response.status_code == 400:
-            print("Bad Request: Check the meeting_data payload.")
-        elif response.status_code == 401:
-            print("Unauthorized: Check your API key or authentication headers.")
-        elif response.status_code == 500:
-            print("Server error: Try again later or contact support.")
-        else:
-            print("An unexpected error occurred.")
-        return None
-    except requests.exceptions.RequestException as req_err:
-        print(f"Request error occurred: {req_err}")
-        return None
-
-    async def get_meetings(self, config, start_date,end_date):
-        """Fetch all meetings for the user."""
-        # url = f"{config['GRAPH_API_ENDPOINT']}/me/events?$filter=start/dateTime ge '{start_date}' and end/dateTime le '{end_date}'"
-        url =f"{config['GRAPH_API_ENDPOINT']}/me/calendarView?startDateTime={start_date}T00:00:00Z&endDateTime={end_date}T23:59:59Z "
-        response = requests.get(url, headers=self.headers)
-        if response.status_code != 200:
-            print(f"Failed to fetch events. Status code: {response.status_code}")
-            print(f"Error details: {response.text}")
-            return []  # Return an empty list or handle as needed
-        response.raise_for_status()
-        try:
-            events = response.json().get("value", [])
-            if not isinstance(events, list):  # Ensure events is a list
-                logging.error("Unexpected API response format.")
-                return []
-        except ValueError:
-            logging.error("Failed to parse JSON response.")
-            return []
-
-        return [
-            {
-                "id": event.get("id"),
-                "subject": event.get("subject"),
-                "start_time": event.get("start", {}).get("dateTime"),
-                "end_time": event.get("end", {}).get("dateTime"),
-                "participants": [
-                    attendee.get("emailAddress", {}).get("address")
-                    for attendee in event.get("attendees", [])
-                ]
-            }
-            for event in events
-        ]
->>>>>>> 026bc25e39e059817223e71c3273b813810c36e4
 
     async def delete_meeting(self, DeleteMeetingRequest) -> MeetingResponse:
         """Delete a meeting from the user's calendar."""
@@ -307,7 +230,6 @@ class MeetingServices:
                 "timeZone": "UTC"
             },
         }
-<<<<<<< HEAD
 
         response = await self.http_helper.patch(url,data=updated_meeting_data_res)
         if response.get("status") == "error":
@@ -317,27 +239,6 @@ class MeetingServices:
                 message=response["message"],
                 data=[]
             )
-=======
-        try:
-            response = requests.patch(url, headers=self.headers, json=updated_meeting_data_res)
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.HTTPError as http_err:
-            print(f"HTTP error occurred: {http_err} - Status code: {response.status_code}")
-            # Additional handling based on status code
-            if response.status_code == 400:
-                print("Bad Request: Check the meeting_data payload.")
-            elif response.status_code == 401:
-                print("Unauthorized: Check your API key or authentication headers.")
-            elif response.status_code == 500:
-                print("Server error: Try again later or contact support.")
-            else:
-                print("An unexpected error occurred.")
-            return None
-        except requests.exceptions.RequestException as req_err:
-            print(f"Request error occurred: {req_err}")
-            return None
->>>>>>> 026bc25e39e059817223e71c3273b813810c36e4
 
         return MeetingResponse(
             status="success",
@@ -374,7 +275,6 @@ class MeetingServices:
                 } for name, email in participants
             ]
         }
-<<<<<<< HEAD
 
         response = await self.http_helper.patch(url, data=add_participate)
         if response.get("status") == "error":
@@ -390,24 +290,3 @@ class MeetingServices:
             message="Meeting deleted successfully",
             data=response
         )
-=======
-        try:
-            response = requests.patch(url, headers=self.headers, json=updated_meeting_data)
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.HTTPError as http_err:
-            print(f"HTTP error occurred: {http_err} - Status code: {response.status_code}")
-            # Additional handling based on status code
-            if response.status_code == 400:
-                print("Bad Request: Check the meeting_data payload.")
-            elif response.status_code == 401:
-                print("Unauthorized: Check your API key or authentication headers.")
-            elif response.status_code == 500:
-                print("Server error: Try again later or contact support.")
-            else:
-                print("An unexpected error occurred.")
-            return None
-        except requests.exceptions.RequestException as req_err:
-            print(f"Request error occurred: {req_err}")
-            return None
->>>>>>> 026bc25e39e059817223e71c3273b813810c36e4
