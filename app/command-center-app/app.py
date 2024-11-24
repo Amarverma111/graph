@@ -375,79 +375,54 @@ async def task_findss():
 
         # Simulate fetching meetings
         task_data = await TaskServices(access_token,config).get_sub_task(TaskGeTSubRequest(**data))
-        # Construct a successful response with the list of meetings
         return jsonify(task_data.dict()), HttpStatusCode.OK.value
 
     except requests.exceptions.RequestException as e:
         return jsonify({"status": "error", "message": str(e)}), HttpStatusCode.INTERNAL_SERVER_ERROR.value
 
 
-# @bp.route('/create-main_task', methods=['POST'])
-# async def task_create_name():
-#     try:
-#         # Simulate fetching access token
-#         data = await request.get_json()
-#         displayName_value = TaskCreateHeadingRequest(**data)
-#
-#         # Access individual attributes from the validated model
-#         displayName = displayName_value.displayName
-#
-#         if not all([displayName]):
-#             return error_response("Missing required parameters", 400)
-#
-#         access_token = MSFTGraph(config['CLIENT_ID'], config['CLIENT_SECRET'],
-#                                  config['TENANT_ID']).get_access_token(config)
-#         # Simulate fetching meetings
-#         task_data = await TaskServices(access_token).creat_task(config, displayName)
-#         # Construct a successful response with the list of meetings
-#         response_data = TaskCreateResponse(
-#             status="success",
-#             message="Task Create successfully",
-#             data=task_data
-#         )
-#         return jsonify(response_data.dict()), 200
-#
-#     except requests.exceptions.RequestException as e:
-#         # Handle request exceptions
-#         return error_response(str(e), 500)
-#
-#     except Exception as e:
-#         # Handle any unexpected errors
-#         return error_response(str(e), 500)
-#
-# @bp.route('/create_sub_task', methods=['POST'])
-# async def task_create_sub_name():
-#     try:
-#         # Simulate fetching access token
-#         data = await request.get_json()
-#         value = TaskCreateSubRequest(**data)
-#
-#         # Access individual attributes from the validated model
-#         title = value.title
-#         todo_list_id = value.todo_list_id
-#
-#         if not all([title, todo_list_id]):
-#             return error_response("Missing required parameters", 400)
-#
-#         access_token = MSFTGraph(config['CLIENT_ID'], config['CLIENT_SECRET'],
-#                                  config['TENANT_ID']).get_access_token(config)
-#         # Simulate fetching meetings
-#         task_data = await TaskServices(access_token).create_sub_task(config, title, todo_list_id)
-#         # Construct a successful response with the list of meetings
-#         response_data = TaskCreateResponse(
-#             status="success",
-#             message="Sub Task Create successfully",
-#             data=task_data
-#         )
-#         return jsonify(response_data.dict()), 200
-#
-#     except requests.exceptions.RequestException as e:
-#         # Handle request exceptions
-#         return error_response(str(e), 500)
-#
-#     except Exception as e:
-#         # Handle any unexpected errors
-#         return error_response(str(e), 500)
+@bp.route('/create-main_task', methods=['POST'])
+async def task_create_name():
+    try:
+        # Simulate fetching access token
+        data = await request.get_json()
+        headers = request.headers
+        access_token = WhoAmIService(headers, config).get_access_token()
+        # Simulate fetching meetings
+        task_data = await TaskServices(access_token,config).creat_task(TaskCreateHeadingRequest(**data))
+        # Construct a successful response with the list of meetings
+        return jsonify(task_data.dict()), HttpStatusCode.OK.value
+    except requests.exceptions.RequestException as e:
+        return jsonify({"status": "error", "message": str(e)}), HttpStatusCode.INTERNAL_SERVER_ERROR.value
+
+
+@bp.route('/create_sub_task', methods=['POST'])
+async def task_create_sub_name():
+    try:
+        # Simulate fetching access token
+        data = await request.get_json()
+        value = TaskCreateSubRequest(**data)
+
+        # Access individual attributes from the validated model
+        title = value.title
+        todo_list_id = value.todo_list_id
+
+        if not all([title, todo_list_id]):
+            return error_response("Missing required parameters", 400)
+
+        access_token = MSFTGraph(config['CLIENT_ID'], config['CLIENT_SECRET'],
+                                 config['TENANT_ID']).get_access_token(config)
+        # Simulate fetching meetings
+        task_data = await TaskServices(access_token).create_sub_task(config, title, todo_list_id)
+        # Construct a successful response with the list of meetings
+        response_data = TaskCreateResponse(
+            status="success",
+            message="Sub Task Create successfully",
+            data=task_data
+        )
+        return jsonify(response_data.dict()), HttpStatusCode.OK.value
+    except requests.exceptions.RequestException as e:
+        return jsonify({"status": "error", "message": str(e)}), HttpStatusCode.INTERNAL_SERVER_ERROR.value
 #
 # @bp.route('/delete-task', methods=['delete'])
 # async def task_find_delete():

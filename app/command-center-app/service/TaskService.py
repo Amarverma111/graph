@@ -20,7 +20,7 @@ class TaskServices:
         end_date = GetTaskRequest.end_date
         if not all([start_date, end_date]):
             # Handle missing parameters case
-            response_data = TaskResponse(
+            response_data = TaskCreateResponse(
                 status="error",
                 message="Missing required parameters",
                 data={}
@@ -30,13 +30,13 @@ class TaskServices:
         url = f"{config['GRAPH_API_ENDPOINT']}/me/todo/lists"
         response = await self.http_helper.get(url)
         if response.get("status") == "error":
-            return TaskResponse(
+            return TaskCreateResponse(
                 status="error",
                 message=response["message"],
                 data={}
             )
         # TaskResponse
-        return  TaskResponse(
+        return  TaskCreateResponse(
                 status="error",
                 message=response["message"],
                 data=response.json()
@@ -47,7 +47,7 @@ class TaskServices:
         taskId = TaskGeTSubRequest.taskId
 
         if not all([todo_list_id]):
-            response_data = TaskResponse(
+            response_data = TaskCreateResponse(
                 status="error",
                 message="Missing required parameters",
                 data={}
@@ -57,28 +57,46 @@ class TaskServices:
         url = f"{config['GRAPH_API_ENDPOINT']}/me/todo/lists/{todo_list_id}/tasks/{taskId}"
         response = await self.http_helper.get(url)
         if response.get("status") == "error":
-            return TaskResponse(
+            return TaskCreateResponse(
                 status="error",
                 message=response["message"],
                 data={}
             )
-        return  TaskResponse(
+        return  TaskCreateResponse(
                 status="error",
                 message=response["message"],
                 data=response.json()
             )
 
 
-    async def creat_task(self, config, displayName):
+    async def creat_task(self, TaskCreateHeadingRequest) ->TaskCreateResponse:
+        displayName = TaskCreateHeadingRequest.displayName
+        if not all([displayName]):
+            response_data = TaskCreateResponse(
+                status="error",
+                message="Missing required parameters",
+                data=[]
+            )
+            return response_data
         """Fetch all meetings for the user."""
         url = f"{config['GRAPH_API_ENDPOINT']}/me/todo/lists"
         body ={
             "displayName": displayName
         }
 
-        response = requests.post(url, headers=self.headers, json=body)
-        response.raise_for_status()
-        return response.json()
+        response_data = await self.http_helper.post(url, data=body)
+        if response_data.get("status") == "error":
+            return TaskCreateResponse(
+                status="error",
+                message=response_data["message"],
+                data=dict()
+            )
+
+        return TaskCreateResponse(
+            status="success",
+            message="Meeting created successfully",
+            data=response_data
+        )
 
     async def create_sub_task(self, config, title, todo_list_id):
         """Fetch all meetings for the user."""
