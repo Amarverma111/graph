@@ -98,16 +98,36 @@ class TaskServices:
             data=response_data
         )
 
-    async def create_sub_task(self, config, title, todo_list_id):
+    async def create_sub_task(self, TaskCreateSubRequest) -> TaskCreateResponse:
+
+        title = TaskCreateSubRequest.title
+        todo_list_id = TaskCreateSubRequest.todo_list_id
+
+        if not all([title, todo_list_id]):
+            response_data = TaskCreateResponse(
+                status="error",
+                message="Missing required parameters",
+                data=[]
+            )
+            return response_data
         """Fetch all meetings for the user."""
         url = f"{config['GRAPH_API_ENDPOINT']}/me/todo/lists/{todo_list_id}/task"
         body ={
             "title": title
         }
+        response_data = await self.http_helper.post(url, data=body)
+        if response_data.get("status") == "error":
+            return TaskCreateResponse(
+                status="error",
+                message=response_data["message"],
+                data=dict()
+            )
 
-        response = requests.post(url, headers=self.headers, json=body)
-        response.raise_for_status()
-        return response.json()
+        return TaskCreateResponse(
+            status="success",
+            message="Meeting created successfully",
+            data=response_data
+        )
 
     async def update_sub_task(self, config, title, todo_list_id):
         """Fetch all meetings for the user."""

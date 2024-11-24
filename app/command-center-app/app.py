@@ -401,26 +401,14 @@ async def task_create_sub_name():
     try:
         # Simulate fetching access token
         data = await request.get_json()
-        value = TaskCreateSubRequest(**data)
+        headers = request.headers
+        access_token = WhoAmIService(headers, config).get_access_token()
+        # value = TaskCreateSubRequest(**data)
 
-        # Access individual attributes from the validated model
-        title = value.title
-        todo_list_id = value.todo_list_id
-
-        if not all([title, todo_list_id]):
-            return error_response("Missing required parameters", 400)
-
-        access_token = MSFTGraph(config['CLIENT_ID'], config['CLIENT_SECRET'],
-                                 config['TENANT_ID']).get_access_token(config)
         # Simulate fetching meetings
-        task_data = await TaskServices(access_token).create_sub_task(config, title, todo_list_id)
+        task_data = await TaskServices(access_token,config).create_sub_task(TaskCreateSubRequest(**data))
         # Construct a successful response with the list of meetings
-        response_data = TaskCreateResponse(
-            status="success",
-            message="Sub Task Create successfully",
-            data=task_data
-        )
-        return jsonify(response_data.dict()), HttpStatusCode.OK.value
+        return jsonify(task_data.dict()), HttpStatusCode.OK.value
     except requests.exceptions.RequestException as e:
         return jsonify({"status": "error", "message": str(e)}), HttpStatusCode.INTERNAL_SERVER_ERROR.value
 #
