@@ -363,44 +363,25 @@ async def task_find():
         return jsonify(task_data.dict()), HttpStatusCode.OK.value
     except requests.exceptions.RequestException as e:
         return jsonify({"status": "error", "message": str(e)}), HttpStatusCode.INTERNAL_SERVER_ERROR.value
-#
-#
-# @bp.route('/get_sub_task', methods=['GET'])
-# async def task_findss():
-#     try:
-#         data = await request.get_json()
-#         value = TaskGeTSubRequest(**data)
-#
-#         # Access individual attributes from the validated model
-#         todo_list_id = value.todo_list_id
-#         taskId = value.taskId
-#
-#
-#         if not all([todo_list_id]):
-#             return error_response("Missing required parameters", 400)
-#         # Simulate fetching access token
-#         access_token = MSFTGraph(config['CLIENT_ID'], config['CLIENT_SECRET'],
-#                                  config['TENANT_ID']).get_access_token(config)
-#         # Simulate fetching meetings
-#         task_data = await TaskServices(access_token).get_sub_task(config,taskId,todo_list_id)
-#         # Construct a successful response with the list of meetings
-#         response_data = TaskResponse(
-#             status="success",
-#             message="sub task retrieved successfully",
-#             data=task_data
-#         )
-#         return jsonify(response_data.dict()), 200
-#
-#     except requests.exceptions.RequestException as e:
-#         # Handle request exceptions
-#         return error_response(str(e), 500)
-#
-#     except Exception as e:
-#         # Handle any unexpected errors
-#         return error_response(str(e), 500)
-#
-#
-#
+
+
+@bp.route('/get_sub_task', methods=['GET'])
+async def task_findss():
+    try:
+        data = await request.get_json()
+        headers = request.headers
+        access_token = WhoAmIService(headers, config).get_access_token()
+        # value = TaskGeTSubRequest(**data)
+
+        # Simulate fetching meetings
+        task_data = await TaskServices(access_token,config).get_sub_task(TaskGeTSubRequest(**data))
+        # Construct a successful response with the list of meetings
+        return jsonify(task_data.dict()), HttpStatusCode.OK.value
+
+    except requests.exceptions.RequestException as e:
+        return jsonify({"status": "error", "message": str(e)}), HttpStatusCode.INTERNAL_SERVER_ERROR.value
+
+
 # @bp.route('/create-main_task', methods=['POST'])
 # async def task_create_name():
 #     try:
