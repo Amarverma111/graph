@@ -125,7 +125,7 @@ class TaskServices:
 
         return TaskCreateResponse(
             status="success",
-            message="Meeting created successfully",
+            message="Sub task created successfully",
             data=response_data
         )
 
@@ -140,9 +140,30 @@ class TaskServices:
         response.raise_for_status()
         return response.json()
 
-    async def delete_task(self, config, taskId, todo_list_id):
+    async def delete_task(self, TaskGeTSubRequest)->TaskCreateResponse:
+        todo_list_id = TaskGeTSubRequest.todo_list_id
+        taskId = TaskGeTSubRequest.taskId
+
+        if not all([todo_list_id]):
+            response_data = TaskCreateResponse(
+                status="error",
+                message="Missing required parameters",
+                data={}
+            )
+            return response_data
         """Fetch all meetings for the user."""
         url = f"{config['GRAPH_API_ENDPOINT']}/me/todo/lists/{todo_list_id}/tasks/{taskId}"
-        response = requests.delete(url, headers=self.headers)
-        response.raise_for_status()
-        return response.json()
+        response = await self.http_helper.delete(url)
+        if response.get("status") == "error":
+            # Return success message when meeting is successfully deleted
+            return TaskCreateResponse(
+                status="error",
+                message=response["message"],
+                data={}
+            )
+
+        return TaskCreateResponse(
+            status="success",
+            message="Task deleted successfully",
+            data=response.json()
+        )

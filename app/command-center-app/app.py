@@ -411,30 +411,20 @@ async def task_create_sub_name():
         return jsonify(task_data.dict()), HttpStatusCode.OK.value
     except requests.exceptions.RequestException as e:
         return jsonify({"status": "error", "message": str(e)}), HttpStatusCode.INTERNAL_SERVER_ERROR.value
-#
-# @bp.route('/delete-task', methods=['delete'])
-# async def task_find_delete():
-#     try:
-#         # Simulate fetching access token
-#         access_token = MSFTGraph(config['CLIENT_ID'], config['CLIENT_SECRET'],
-#                                  config['TENANT_ID']).get_access_token(config)
-#         # Simulate fetching meetings
-#         task_data = await TaskServices(access_token).delete_task(config)
-#         # Construct a successful response with the list of meetings
-#         response_data = TaskResponse(
-#             status="success",
-#             message="Meetings retrieved successfully",
-#             data=task_data
-#         )
-#         return jsonify(response_data.dict()), 200
-#
-#     except requests.exceptions.RequestException as e:
-#         # Handle request exceptions
-#         return error_response(str(e), 500)
-#
-#     except Exception as e:
-#         # Handle any unexpected errors
-#         return error_response(str(e), 500)
+
+
+@bp.route('/delete-task', methods=['delete'])
+async def task_find_delete():
+    try:
+        data = await request.get_json()
+        headers = request.headers
+        access_token = WhoAmIService(headers, config).get_access_token()
+        # Simulate fetching access token
+        task_data = await TaskServices(access_token,config).delete_task(TaskGeTSubRequest(**data))
+        # Construct a successful response with the list of meetings
+        return jsonify(task_data.dict()), HttpStatusCode.OK.value
+    except requests.exceptions.RequestException as e:
+        return jsonify({"status": "error", "message": str(e)}), HttpStatusCode.INTERNAL_SERVER_ERROR.value
 
 
 def create_app():
