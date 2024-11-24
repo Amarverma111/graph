@@ -246,7 +246,6 @@ async def api_get_email():
         return jsonify({"status": "error", "message": str(e)}), HttpStatusCode.INTERNAL_SERVER_ERROR.value
 
 
-
 @bp.route('/sent-email', methods=['POST'])
 async def create_email():
     try:
@@ -347,31 +346,23 @@ async def email_with_attachment():
 
     except requests.exceptions.RequestException as e:
         return jsonify({"status": "error", "message": str(e)}), HttpStatusCode.INTERNAL_SERVER_ERROR.value
-#
+
+
+
+
 # # TASK START
-# @bp.route('/get_all_task', methods=['GET'])
-# async def task_find():
-#     try:
-#         # Simulate fetching access token
-#         access_token = MSFTGraph(config['CLIENT_ID'], config['CLIENT_SECRET'],
-#                                  config['TENANT_ID']).get_access_token(config)
-#         # Simulate fetching meetings
-#         task_data = await TaskServices(access_token).get_task(config)
-#         # Construct a successful response with the list of meetings
-#         response_data = TaskResponse(
-#             status="success",
-#             message="Task retrieved successfully",
-#             data=task_data
-#         )
-#         return jsonify(response_data.dict()), 200
-#
-#     except requests.exceptions.RequestException as e:
-#         # Handle request exceptions
-#         return error_response(str(e), 500)
-#
-#     except Exception as e:
-#         # Handle any unexpected errors
-#         return error_response(str(e), 500)
+@bp.route('/get_all_task', methods=['GET'])
+async def task_find():
+    try:
+        data = await request.get_json()
+        headers = request.headers
+        access_token = WhoAmIService(headers, config).get_access_token()
+        # Simulate fetching meetings
+        task_data = await TaskServices(access_token,config).get_task(GetTaskRequest(**data))
+        # Construct a successful response with the list of meetings
+        return jsonify(task_data.dict()), HttpStatusCode.OK.value
+    except requests.exceptions.RequestException as e:
+        return jsonify({"status": "error", "message": str(e)}), HttpStatusCode.INTERNAL_SERVER_ERROR.value
 #
 #
 # @bp.route('/get_sub_task', methods=['GET'])

@@ -6,7 +6,7 @@ from quart import jsonify
 class TaskResponse(BaseModel):
     status: str
     message: str
-    data: dict
+    data: []
 
 class TaskCreateHeadingRequest(BaseModel):
    displayName: str
@@ -26,3 +26,7 @@ class TaskCreateResponse(BaseModel):
 
 class TaskSubRequest(BaseModel):
     todo_list_id: str
+
+class GetTaskRequest(BaseModel):
+    start_date: datetime
+    end_date: datetime
