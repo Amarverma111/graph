@@ -11,7 +11,8 @@ from pydantic import ValidationError
 from urllib.parse import urlencode
 from contracts.meeting import CreateMeetingRequest, MeetingResponse, DeleteMeetingRequest, UpdateMeetingRequest, RescheduleMeetingRequest,\
     AddParticipantsRequest,  GetMeetingResponse, GetMeetingRequest, DeleteMeetingResponse
-from contracts.email import CreateEmailRequest, DeleteEmailRequest, SendEmailRequest, ForwardEmailRequest, ReplyEmailRequest, MessageSentResponse, GetEmailRequest
+from contracts.email import CreateEmailRequest, DeleteEmailRequest, SendEmailRequest, ForwardEmailRequest, \
+    ReplyEmailRequest, MessageSentResponse, GetEmailRequest, DeleteEmailResponse
 from contracts.task import TaskResponse, TaskCreateHeadingRequest, TaskCreateSubRequest, TaskCreateResponse, \
     TaskGeTSubRequest
 
@@ -231,248 +232,121 @@ async def api_add_participants():
 
 
 # # EMAIL START
-# @bp.route('/get_email', methods=['GET'])
-# async def api_get_email():
-#     try:
-#         data = await request.get_json()
-#         get_request = GetEmailRequest(**data)
-#         start_date = get_request.start_date
-#         end_date = get_request.end_date
-#
-#         if not all([start_date, end_date]):
-#             return error_response("Missing required parameters", 400)
-#
-#         # Simulate fetching access token
-#         access_token = MSFTGraph(config['CLIENT_ID'], config['CLIENT_SECRET'], config['TENANT_ID']).get_access_token(config)
-#         # Simulate fetching meetings
-#         get_email = await EmailServices(access_token).get_email(config, start_date, end_date)
-#         # Construct a successful response with the list of meetings
-#         response_data = GetMeetingResponse(
-#             status="success",
-#             message="Email retrieved successfully",
-#             data=get_email
-#         )
-#         return jsonify(response_data.dict()), 200
-#
-#     except requests.exceptions.RequestException as e:
-#         # Handle request exceptions
-#         return error_response(str(e), 500)
-#
-#     except Exception as e:
-#         # Handle any unexpected errors
-#         return error_response(str(e), 500)
-#
-#
-# @bp.route('/sent-email', methods=['POST'])
-# async def create_email():
-#     try:
-#         data = await request.get_json()  # FastAPI's equivalent for getting JSON body
-#         email_request = CreateEmailRequest(**data)  # Validate data with Pydantic model
-#
-#         # Extract fields from the validated request
-#         subject = email_request.message.subject
-#         body_content = email_request.message.body.content
-#         recipients = [recipient.emailAddress.address for recipient in email_request.message.toRecipients]
-#         ccRecipients = email_request.message.ccRecipients
-#         bccRecipients = email_request.message.bccRecipients
-#
-#         # Check for missing fields, but Pydantic will already enforce required fields
-#         if not all([subject, body_content, recipients]):
-#             return error_response("Missing required parameters", 400)
-#
-#         # Assuming MSFTGraph is your custom class for interacting with the Microsoft Graph API
-#         access_token = MSFTGraph(config['CLIENT_ID'], config['CLIENT_SECRET'], config['TENANT_ID']).get_access_token(
-#             config)
-#
-#         # Make the API call to send the email (example)
-#         email_sent = await EmailServices(access_token).send_email(subject, body_content, recipients, config, ccRecipients, bccRecipients)
-#         response_data = MessageSentResponse(
-#             status="success",
-#             message="Email sent successfully",
-#             data=email_sent
-#         )
-#         return jsonify(response_data.dict()), 200
-#
-#     except ValidationError as e:
-#         # Handle validation errors from Pydantic
-#         return error_response(f"Invalid input: {str(e)}", 400)
-#
-#     except requests.exceptions.RequestException as e:
-#         # Handle any errors from external service calls
-#         return error_response(f"Error with external service: {str(e)}", 500)
-#
-#     except Exception as e:
-#         # Catch any other unexpected errors
-#         return error_response(f"Unexpected error: {str(e)}", 500)
-#
-# @bp.route('/reply_email', methods=['POST'])
-# async def reply_email():
-#     try:
-#         # Parse and validate the incoming request data using the SendEmailRequest model
-#         data = await request.get_json()
-#         reply_request = ReplyEmailRequest(**data)
-#
-#         # Access individual attributes from the validated model
-#         email_id = reply_request.email_id
-#         reply_body = reply_request.reply_body
-#
-#         if not all([email_id, reply_body]):
-#             return error_response("Missing required parameters", 400)
-#
-#         # Get the access token for Graph API
-#         access_token = MSFTGraph(config['CLIENT_ID'], config['CLIENT_SECRET'], config['TENANT_ID']).get_access_token(config)
-#
-#         # Simulate sending the email
-#         reply_sent = await EmailServices(access_token).send_reply(email_id, reply_body, config)
-#
-#         # Construct a success response
-#         response_data = MessageSentResponse(
-#             status="success",
-#             message="reply response",
-#             data=reply_sent
-#         )
-#
-#         return jsonify(response_data.dict()), 200
-#
-#     except ValidationError as e:
-#         # Handle validation errors from Pydantic
-#         return jsonify({"status": "error", "message": "Invalid data: " + str(e)}), 400
-#
-#     except requests.exceptions.RequestException as e:
-#         # Handle any request exceptions
-#         return jsonify({"status": "error", "message": str(e)}), 500
-#
-#     except Exception as e:
-#         # Catch all other exceptions
-#         return jsonify({"status": "error", "message": str(e)}), 500
-#
-# @bp.route('/delete_email', methods=['DELETE'])
-# async def api_delete_email():
-#     try:
-#         # Parse and validate the request data using the DeleteMeetingRequest model
-#         data = await request.get_json()
-#         meeting_request = DeleteEmailRequest(**data)
-#
-#         # Access individual attributes from the validated model
-#         email_id = meeting_request.email_id
-#         confirmation = meeting_request.confirm
-#
-#         # Check for missing confirmation
-#         if confirmation != "yes":
-#             return error_response("Deletion not confirmed", 400)
-#
-#         # Simulate fetching access token
-#         access_token = MSFTGraph(config['CLIENT_ID'], config['CLIENT_SECRET'], config['TENANT_ID']).get_access_token(config)
-#
-#         # Simulate deleting the meeting
-#         deletion_response = await EmailServices(access_token).delete_email(email_id, config)
-#
-#         # Construct a success response
-#         response_data = MeetingResponse(
-#             status="success",
-#             message="Meeting deleted successfully",
-#             data=deletion_response
-#         )
-#
-#         return jsonify(response_data.dict()), 200
-#
-#     except ValidationError as e:
-#         # Handle validation errors from Pydantic, including missing fields
-#         return jsonify({"status": "error", "message": "Invalid data: " + str(e)}), 400
-#
-#     except requests.exceptions.RequestException as e:
-#         # Handle any request exceptions
-#         return jsonify({"status": "error", "message": str(e)}), 500
-#
-# @bp.route('/forwarding_email', methods=['POST'])
-# async def forwarding_email():
-#     try:
-#         # Parse and validate the incoming request data using the SendEmailRequest model
-#         data = await request.get_json()
-#         forward_request = ForwardEmailRequest(**data)
-#
-#         # Access individual attributes from the validated model
-#         email_id = forward_request.email_id
-#         forward_to_email = forward_request.forward_to_email
-#         subject_prefix = forward_request.subject_prefix
-#         custom_message = forward_request.custom_message
-#
-#         # Get the access token for Graph API
-#         access_token = MSFTGraph(config['CLIENT_ID'], config['CLIENT_SECRET'], config['TENANT_ID']).get_access_token(config)
-#
-#         # Simulate sending the email
-#         send_forward_response = await EmailServices(access_token).email_forward(email_id,forward_to_email, subject_prefix, custom_message,config)
-#
-#         # Construct a success response
-#         response_data = MeetingResponse(
-#             status="success",
-#             message="Forward sent successfully",
-#             data=send_forward_response
-#         )
-#
-#         return jsonify(response_data.dict()), 200
-#
-#     except ValidationError as e:
-#         # Handle validation errors from Pydantic
-#         return jsonify({"status": "error", "message": "Invalid data: " + str(e)}), 400
-#
-#     except requests.exceptions.RequestException as e:
-#         # Handle any request exceptions
-#         return jsonify({"status": "error", "message": str(e)}), 500
-#
-#     except Exception as e:
-#         # Catch all other exceptions
-#         return jsonify({"status": "error", "message": str(e)}), 500
-#
-#
-# @bp.route('/attachment_email', methods=['POST'])
-# async def email_with_attachment():
-#     try:
-#         # Parse and validate the incoming request data using the SendEmailRequest model
-#         data = await request.get_json()
-#         email_request = SendEmailRequest(**data)
-#
-#         # Access individual attributes from the validated model
-#         subject = email_request.subject
-#         body = email_request.body
-#         recipient_email = email_request.recipient_email
-#         attachments = email_request.attachments
-#
-#         # Simulate fetching access token
-#         access_token = MSFTGraph(config['CLIENT_ID'], config['CLIENT_SECRET'], config['TENANT_ID']).get_access_token(config)
-#
-#         # Prepare the attachments (base64 encode the files)
-#         attachment_data = []
-#         for file_path in attachments:
-#             # Read and base64 encode each file
-#             with open(file_path, "rb") as f:
-#                 file_content = base64.b64encode(f.read()).decode('utf-8')
-#
-#         # Simulate sending the email
-#         send_attachment_response = await EmailServices(access_token).\
-#             email_attachment(subject, body, recipient_email, file_content, config
-#     )
-#
-#         # Construct a success response
-#         response_data = MeetingResponse(
-#             status="success",
-#             message="Attachment sent successfully",
-#             data=send_attachment_response
-#         )
-#
-#         return jsonify(response_data.dict()), 200
-#
-#     except ValidationError as e:
-#         # Handle validation errors from Pydantic
-#         return jsonify({"status": "error", "message": "Invalid data: " + str(e)}), 400
-#
-#     except requests.exceptions.RequestException as e:
-#         # Handle any request exceptions
-#         return jsonify({"status": "error", "message": str(e)}), 500
-#
-#     except Exception as e:
-#         # Catch all other exceptions
-#         return jsonify({"status": "error", "message": str(e)}), 500
+@bp.route('/get_email', methods=['GET'])
+async def api_get_email():
+    try:
+        data = await request.get_json()
+        headers = request.headers
+        access_token = WhoAmIService(headers, config).get_access_token()
+        # Simulate fetching access token
+        get_email = await EmailServices(access_token, config).get_email(GetEmailRequest(**data))
+
+        return jsonify(get_email.dict()), HttpStatusCode.OK.value
+    except requests.exceptions.RequestException as e:
+        return jsonify({"status": "error", "message": str(e)}), HttpStatusCode.INTERNAL_SERVER_ERROR.value
+
+
+
+@bp.route('/sent-email', methods=['POST'])
+async def create_email():
+    try:
+        data = await request.get_json()  # FastAPI's equivalent for getting JSON body
+        headers = request.headers
+        access_token = WhoAmIService(headers, config).get_access_token()
+        # Make the API call to send the email (example)
+        email_sent = await EmailServices(access_token,config).send_email(CreateEmailRequest(**data))
+        return jsonify(email_sent.dict()), HttpStatusCode.OK.value
+    except ValidationError as e:
+        # Handle validation errors from Pydantic, including missing fields
+        return jsonify({"status": "error", "message": "Invalid data: " + str(e)}), HttpStatusCode.BAD_REQUEST.value
+    except requests.exceptions.RequestException as e:
+        # Handle any request exceptions
+        return jsonify({"status": "error", "message": str(e)}), HttpStatusCode.INTERNAL_SERVER_ERROR.value.value
+    except Exception as e:
+        # Handle any unexpected errors
+        return jsonify({"status": "error",
+                "message": "An unexpected error occurred: " + str(e)}), HttpStatusCode.INTERNAL_SERVER_ERROR.value
+
+@bp.route('/reply_email', methods=['POST'])
+async def reply_email():
+    try:
+        # Parse and validate the incoming request data using the SendEmailRequest model
+        data = await request.get_json()
+        headers = request.headers
+        access_token = WhoAmIService(headers, config).get_access_token()
+        # Simulate sending the email
+        reply_sent = await EmailServices(access_token,config).send_reply(ReplyEmailRequest(**data))
+        return jsonify(reply_sent.dict()), HttpStatusCode.OK.value
+
+    except ValidationError as e:
+        # Handle validation errors from Pydantic
+        return jsonify({"status": "error", "message": "Invalid data: " + str(e)}), HttpStatusCode.BAD_REQUEST.value
+
+    except requests.exceptions.RequestException as e:
+        # Handle any request exceptions
+        return jsonify({"status": "error", "message": str(e)}), HttpStatusCode.INTERNAL_SERVER_ERROR.value.value
+
+    except Exception as e:
+        # Catch all other exceptions
+        return jsonify({"status": "error", "message": str(e)}), HttpStatusCode.INTERNAL_SERVER_ERROR.value.value
+
+@bp.route('/delete_email', methods=['DELETE'])
+async def api_delete_email():
+    try:
+        # Parse and validate the request data using the DeleteMeetingRequest model
+        data = await request.get_json()
+        headers = request.headers
+        # Simulate access token fetching
+        access_token = WhoAmIService(headers, config).get_access_token()
+        # Simulate deleting the meeting
+        deletion_response = await EmailServices(access_token,config).delete_email(DeleteEmailRequest(**data))
+        return  jsonify([deletion_response.dict()]), HttpStatusCode.OK.value
+    except ValidationError as e:
+        # Handle validation errors from Pydantic, including missing fields
+        return jsonify({"status": "error", "message": "Invalid data: " + str(e)}),  HttpStatusCode.BAD_REQUEST.value
+
+    except requests.exceptions.RequestException as e:
+        # Handle any request exceptions
+        return jsonify({"status": "error", "message": str(e)}), HttpStatusCode.INTERNAL_SERVER_ERROR.value
+
+
+@bp.route('/forwarding_email', methods=['POST'])
+async def forwarding_email():
+    try:
+        # Parse and validate the incoming request data using the SendEmailRequest model
+        data = await request.get_json()
+        headers = request.headers
+        access_token = WhoAmIService(headers, config).get_access_token()
+        # Simulate sending the email
+        send_forward_response = await EmailServices(access_token,config).email_forward(ForwardEmailRequest(**data))
+
+        # Construct a success response
+        response_data = MeetingResponse(
+            status="success",
+            message="Forward sent successfully",
+            data=send_forward_response
+        )
+
+        return jsonify(response_data.dict()), 200
+
+    except requests.exceptions.RequestException as e:
+        return jsonify({"status": "error", "message": str(e)}), HttpStatusCode.INTERNAL_SERVER_ERROR.value
+
+@bp.route('/attachment_email', methods=['POST'])
+async def email_with_attachment():
+    try:
+        # Parse and validate the incoming request data using the SendEmailRequest model
+        data = await request.get_json()
+        # email_request = SendEmailRequest(**data)
+        headers = request.headers
+        # Simulate access token fetching
+        access_token = WhoAmIService(headers, config).get_access_token()
+        # Simulate sending the email
+        send_attachment_response = await EmailServices(access_token,config).email_attachment(SendEmailRequest(**data))
+        return jsonify(send_attachment_response.dict()), HttpStatusCode.OK.value
+
+    except requests.exceptions.RequestException as e:
+        return jsonify({"status": "error", "message": str(e)}), HttpStatusCode.INTERNAL_SERVER_ERROR.value
 #
 # # TASK START
 # @bp.route('/get_all_task', methods=['GET'])
