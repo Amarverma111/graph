@@ -1,8 +1,6 @@
 import requests
-from requests.exceptions import HTTPError, RequestException
-import time
-
-from contracts.task import TaskResponse
+from Helper.HttpHelper import HttpHelper
+from contracts.task import  TaskCreateResponse
 
 
 class TaskServices:
@@ -15,7 +13,7 @@ class TaskServices:
         }
         self.http_helper = HttpHelper(self.headers)
 
-    async def get_task(self, GetTaskRequest) -> TaskResponse:
+    async def get_task(self, GetTaskRequest) -> TaskCreateResponse:
         start_date = GetTaskRequest.start_date
         end_date = GetTaskRequest.end_date
         if not all([start_date, end_date]):
@@ -27,7 +25,7 @@ class TaskServices:
             )
             return response_data  # Return error response with missing parameters
         """Fetch all meetings for the user."""
-        url = f"{config['GRAPH_API_ENDPOINT']}/me/todo/lists"
+        url = f"{self.config['GRAPH_API_ENDPOINT']}/me/todo/lists"
         response = await self.http_helper.get(url)
         if response.get("status") == "error":
             return TaskCreateResponse(
@@ -42,7 +40,7 @@ class TaskServices:
                 data=response.json()
             )
 
-    async def get_sub_task(self, TaskGeTSubRequest) ->TaskResponse:
+    async def get_sub_task(self, TaskGeTSubRequest) ->TaskCreateResponse:
         todo_list_id = TaskGeTSubRequest.todo_list_id
         taskId = TaskGeTSubRequest.taskId
 
@@ -54,7 +52,7 @@ class TaskServices:
             )
             return response_data
         """Fetch all meetings for the user."""
-        url = f"{config['GRAPH_API_ENDPOINT']}/me/todo/lists/{todo_list_id}/tasks/{taskId}"
+        url = f"{self.config['GRAPH_API_ENDPOINT']}/me/todo/lists/{todo_list_id}/tasks/{taskId}"
         response = await self.http_helper.get(url)
         if response.get("status") == "error":
             return TaskCreateResponse(
@@ -75,11 +73,11 @@ class TaskServices:
             response_data = TaskCreateResponse(
                 status="error",
                 message="Missing required parameters",
-                data=[]
+                data={}
             )
             return response_data
         """Fetch all meetings for the user."""
-        url = f"{config['GRAPH_API_ENDPOINT']}/me/todo/lists"
+        url = f"{self.config['GRAPH_API_ENDPOINT']}/me/todo/lists"
         body ={
             "displayName": displayName
         }
@@ -107,11 +105,11 @@ class TaskServices:
             response_data = TaskCreateResponse(
                 status="error",
                 message="Missing required parameters",
-                data=[]
+                data={}
             )
             return response_data
         """Fetch all meetings for the user."""
-        url = f"{config['GRAPH_API_ENDPOINT']}/me/todo/lists/{todo_list_id}/task"
+        url = f"{self.config['GRAPH_API_ENDPOINT']}/me/todo/lists/{todo_list_id}/task"
         body ={
             "title": title
         }
@@ -152,7 +150,7 @@ class TaskServices:
             )
             return response_data
         """Fetch all meetings for the user."""
-        url = f"{config['GRAPH_API_ENDPOINT']}/me/todo/lists/{todo_list_id}/tasks/{taskId}"
+        url = f"{self.config['GRAPH_API_ENDPOINT']}/me/todo/lists/{todo_list_id}/tasks/{taskId}"
         response = await self.http_helper.delete(url)
         if response.get("status") == "error":
             # Return success message when meeting is successfully deleted

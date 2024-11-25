@@ -1,8 +1,9 @@
-import requests
-from requests.exceptions import HTTPError, RequestException
+import base64
 import time
-
-from contracts.email import GetEmailResponse, EmailResponse
+import requests
+from Helper.HttpHelper import HttpHelper
+from contracts.email import GetEmailResponse, EmailResponse, MessageSentResponse, CreateEmailResponse, \
+    DeleteEmailResponse
 
 
 class EmailServices:
@@ -30,7 +31,7 @@ class EmailServices:
             )
             return response_data  # Return error response with missing parameters
         """Create a new meeting in the user's calendar."""
-        url = f"{config['GRAPH_API_ENDPOINT']}/me/sendMail"
+        url = f"{self.config['GRAPH_API_ENDPOINT']}/me/sendMail"
         email_data = {
             "message": {
                 "subject": subject,
@@ -81,7 +82,7 @@ class EmailServices:
             )
             return response_data  # Return error response with missing parameters
         """Fetch all meetings for the user."""
-        url = f"{config['GRAPH_API_ENDPOINT']}/me/messages?$filter=receivedDateTime ge {start_date}T00:00:00Z and receivedDateTime le {end_date}T23:59:59Z"
+        url = f"{self.config['GRAPH_API_ENDPOINT']}/me/messages?$filter=receivedDateTime ge {start_date}T00:00:00Z and receivedDateTime le {end_date}T23:59:59Z"
         response = await self.http_helper.get(url)
         if response.get("status") == "error":
             return GetEmailResponse(
@@ -104,7 +105,7 @@ class EmailServices:
         response_data = GetEmailResponse(
             status="success",
             message="Meetings retrieved successfully",
-            data=get_detail
+            data=AllEmails
         )
         return response_data
 
@@ -120,7 +121,7 @@ class EmailServices:
                 data=[{"message": "Email deletion was not confirmed."}]  # Wrap in a list
             )
         """Delete a meeting from the user's calendar."""
-        url = f"{config['GRAPH_API_ENDPOINT']}/me/messages/{email_id}"
+        url = f"{self.config['GRAPH_API_ENDPOINT']}/me/messages/{email_id}"
         response = await self.http_helper.delete(url)
         # Check for successful deletion (status code 204)
         if response.get("status") == "error":
@@ -156,7 +157,7 @@ class EmailServices:
                 data={}
             )
             return response_data
-        url = f"{config['GRAPH_API_ENDPOINT']}/me/sendMail"
+        url = f"{self.config['GRAPH_API_ENDPOINT']}/me/sendMail"
         email_data = {
             "message": {
                 "subject": subject,
@@ -211,7 +212,7 @@ class EmailServices:
             return response_data
 
         global forward_response, forward_url
-        url = f"{config['GRAPH_API_ENDPOINT']}/me/messages/{email_id}"
+        url = f"{self.config['GRAPH_API_ENDPOINT']}/me/messages/{email_id}"
         response = await self.http_helper.get(url)
         if response.get("status") == "error":
             raise Exception(f"Failed to fetch the email: {response.text}")
@@ -246,7 +247,7 @@ class EmailServices:
         while True:
             try:
                 # Corrected method call: remove the extra 'self' argument
-                response = self.repeater_api(config, forward_email_data)
+                response = self.repeater_api(self.config, forward_email_data)
                 if response.get("status") == "error":
                     return EmailResponse(
                         status="error",
@@ -264,8 +265,8 @@ class EmailServices:
             # Wait before retrying
             time.sleep(10)
 
-    async def repeater_api(self, config, forward_email_data):
-        forward_url = f"{config['GRAPH_API_ENDPOINT']}/me/sendMail"
+    async def repeater_api(self, forward_email_data):
+        forward_url = f"{self.config['GRAPH_API_ENDPOINT']}/me/sendMail"
         forward_response = requests.post(forward_url, json=forward_email_data, headers=self.headers)
         forward_response.raise_for_status()
         return forward_response.json()
@@ -322,7 +323,7 @@ class EmailServices:
             )
             return response_data
         """Create a new reply to the user's email."""
-        url = f"{config['GRAPH_API_ENDPOINT']}/me/messages/{email_id}/reply"
+        url = f"{self.config['GRAPH_API_ENDPOINT']}/me/messages/{email_id}/reply"
 
         # The body of the reply
         data = {

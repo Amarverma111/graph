@@ -1,5 +1,4 @@
 import requests
-import base64
 from quart import (Blueprint, Quart, request, jsonify)
 from service.MeetingService import MeetingServices
 from service.extension.load_config_yaml import load_config
@@ -10,13 +9,11 @@ from Helper.HttpHelper import HttpStatusCode
 from pydantic import ValidationError
 from urllib.parse import urlencode
 from contracts.meeting import CreateMeetingRequest, MeetingResponse, DeleteMeetingRequest, UpdateMeetingRequest, RescheduleMeetingRequest,\
-    AddParticipantsRequest,  GetMeetingResponse, GetMeetingRequest, DeleteMeetingResponse
+    AddParticipantsRequest, GetMeetingRequest, DeleteMeetingResponse
 from contracts.email import CreateEmailRequest, DeleteEmailRequest, SendEmailRequest, ForwardEmailRequest, \
-    ReplyEmailRequest, MessageSentResponse, GetEmailRequest, DeleteEmailResponse
-from contracts.task import TaskResponse, TaskCreateHeadingRequest, TaskCreateSubRequest, TaskCreateResponse, \
-    TaskGeTSubRequest
-
-
+    ReplyEmailRequest, GetEmailRequest
+from contracts.task import TaskCreateHeadingRequest, TaskCreateSubRequest, \
+    TaskGeTSubRequest, GetTaskRequest
 
 # Load configuration based on environment
 env = 'dev'  # Can be set dynamically or use an environment variable
@@ -349,7 +346,7 @@ async def email_with_attachment():
 
 
 
-
+#
 # # TASK START
 @bp.route('/get_all_task', methods=['GET'])
 async def task_find():
@@ -360,7 +357,7 @@ async def task_find():
         # Simulate fetching meetings
         task_data = await TaskServices(access_token,config).get_task(GetTaskRequest(**data))
         # Construct a successful response with the list of meetings
-        return jsonify(task_data.dict()), HttpStatusCode.OK.value
+        return jsonify(task_data), HttpStatusCode.OK.value
     except requests.exceptions.RequestException as e:
         return jsonify({"status": "error", "message": str(e)}), HttpStatusCode.INTERNAL_SERVER_ERROR.value
 
@@ -371,11 +368,9 @@ async def task_findss():
         data = await request.get_json()
         headers = request.headers
         access_token = WhoAmIService(headers, config).get_access_token()
-        # value = TaskGeTSubRequest(**data)
-
         # Simulate fetching meetings
         task_data = await TaskServices(access_token,config).get_sub_task(TaskGeTSubRequest(**data))
-        return jsonify(task_data.dict()), HttpStatusCode.OK.value
+        return jsonify(task_data), HttpStatusCode.OK.value
 
     except requests.exceptions.RequestException as e:
         return jsonify({"status": "error", "message": str(e)}), HttpStatusCode.INTERNAL_SERVER_ERROR.value
@@ -391,7 +386,7 @@ async def task_create_name():
         # Simulate fetching meetings
         task_data = await TaskServices(access_token,config).creat_task(TaskCreateHeadingRequest(**data))
         # Construct a successful response with the list of meetings
-        return jsonify(task_data.dict()), HttpStatusCode.OK.value
+        return jsonify(task_data), HttpStatusCode.OK.value
     except requests.exceptions.RequestException as e:
         return jsonify({"status": "error", "message": str(e)}), HttpStatusCode.INTERNAL_SERVER_ERROR.value
 
@@ -403,12 +398,10 @@ async def task_create_sub_name():
         data = await request.get_json()
         headers = request.headers
         access_token = WhoAmIService(headers, config).get_access_token()
-        # value = TaskCreateSubRequest(**data)
-
         # Simulate fetching meetings
         task_data = await TaskServices(access_token,config).create_sub_task(TaskCreateSubRequest(**data))
         # Construct a successful response with the list of meetings
-        return jsonify(task_data.dict()), HttpStatusCode.OK.value
+        return jsonify(task_data), HttpStatusCode.OK.value
     except requests.exceptions.RequestException as e:
         return jsonify({"status": "error", "message": str(e)}), HttpStatusCode.INTERNAL_SERVER_ERROR.value
 
@@ -422,7 +415,7 @@ async def task_find_delete():
         # Simulate fetching access token
         task_data = await TaskServices(access_token,config).delete_task(TaskGeTSubRequest(**data))
         # Construct a successful response with the list of meetings
-        return jsonify(task_data.dict()), HttpStatusCode.OK.value
+        return jsonify(task_data), HttpStatusCode.OK.value
     except requests.exceptions.RequestException as e:
         return jsonify({"status": "error", "message": str(e)}), HttpStatusCode.INTERNAL_SERVER_ERROR.value
 
