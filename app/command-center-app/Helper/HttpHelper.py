@@ -1,6 +1,6 @@
 import aiohttp
 from typing import Dict, Any
-from enum import Enum
+
 
 class HttpHelper:
     def __init__(self, headers: Dict[str, str]):
@@ -10,14 +10,56 @@ class HttpHelper:
         async with aiohttp.ClientSession() as session:
             try:
                 async with session.request(method, url, headers=self.headers, params=params, json=data) as response:
-                    response.raise_for_status()  # Raise error for bad responses (e.g., 4xx, 5xx)
-                    return await response.json()
+                    if 200 <= response.status < 300:
+                        # Success response
+                        return {
+                            "status": "success",
+                            "message": "Request successful",
+                            "data": await response.json(),
+                            "status_code": response.status,
+                        }
+                    elif 400 <= response.status < 500:
+                        # Client error
+                        return {
+                            "status": "error",
+                            "message": f"Client error: {response.status}",
+                            "data": await response.text(),
+                            "status_code": response.status,
+                        }
+                    elif response.status >= 500:
+                        # Server error
+                        return {
+                            "status": "error",
+                            "message": f"Server error: {response.status}",
+                            "data": await response.text(),
+                            "status_code": response.status,
+                        }
+                    else:
+                        # Other responses
+                        return {
+                            "status": "unknown",
+                            "message": f"Unhandled status code: {response.status}",
+                            "data": await response.text(),
+                            "status_code": response.status,
+                        }
             except aiohttp.ClientResponseError as e:
-                return {"status": "error", "message": f"HTTP Error: {str(e)}", "data": []}
+                return {
+                    "status": "error",
+                    "message": f"HTTP Error: {str(e)}",
+                    "data": [],
+                }
             except aiohttp.ClientError as e:
-                return {"status": "error", "message": f"Request Error: {str(e)}", "data": []}
+                return {
+                    "status": "error",
+                    "message": f"Request Error: {str(e)}",
+                    "data": [],
+                }
             except Exception as e:
-                return {"status": "error", "message": f"Unexpected Error: {str(e)}", "data": []}
+                return {
+                    "status": "error",
+                    "message": f"Unexpected Error: {str(e)}",
+                    "data": [],
+                }
 
     async def get(self, url: str) -> Dict[str, Any]:
         return await self._request("GET", url)
@@ -33,6 +75,7 @@ class HttpHelper:
 
     async def delete(self, url: str) -> Dict[str, Any]:
         return await self._request("DELETE", url)
+
 
 class HttpStatusCode(Enum):
     # Successful responses

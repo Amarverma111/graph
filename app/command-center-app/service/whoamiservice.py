@@ -10,12 +10,15 @@ class WhoAmIService:
         self.config = config
 
     def get_access_token(self):
+        import pdb;pdb.set_trace()
         if token := self.headers.get('Token'):
             return token
 
         if self.config.get('ENV') != 'localhost':
             return "Token is required in the environment, but it's missing."
 
+        if self.config.get('ENV') == "dev":
+            return os.getenv('ACCESS_TOKEN')
         # If not, check for localhost and load from .env
         if self.is_local_host(self.config.get('ENV')):
             return os.getenv('ACCESS_TOKEN')
