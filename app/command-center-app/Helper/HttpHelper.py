@@ -2,37 +2,61 @@ import aiohttp
 from typing import Dict, Any
 from enum import Enum
 
+import aiohttp
+from typing import Dict, Any, Tuple
+
 class HttpHelper:
     def __init__(self, headers: Dict[str, str]):
         self.headers = headers
 
-    async def _request(self, method: str, url: str, params: Dict[str, Any] = None, data: Dict[str, Any] = None) -> Dict[str, Any]:
+    async def _request(
+        self, method: str, url: str, params: Dict[str, Any] = None, data: Dict[str, Any] = None
+    ) -> Tuple[Dict[str, Any], int]:
         async with aiohttp.ClientSession() as session:
             try:
-                async with session.request(method, url, headers=self.headers, params=params, json=data) as response:
-                    response.raise_for_status()  # Raise error for bad responses (e.g., 4xx, 5xx)
-                    return await response.json()
+                async with session.request(
+                    method, url, headers=self.headers, params=params, json=data
+                ) as response:
+                    # Return the response JSON along with the status code
+                    return {
+                        "status": "success",
+                        "message":response['message'],
+                        "data": await response.json(),
+                    }, response.status
             except aiohttp.ClientResponseError as e:
-                return {"status": "error", "message": f"HTTP Error: {str(e)}", "data": []}
+                return {
+                    "status": "error",
+                    "message": f"HTTP Error: {e.message}",
+                    "data": [],
+                }, e.status
             except aiohttp.ClientError as e:
-                return {"status": "error", "message": f"Request Error: {str(e)}", "data": []}
+                return {
+                    "status": "error",
+                    "message": f"Request Error: {str(e)}",
+                    "data": [],
+                }, 500  # Assuming a 500 error for client-side issues
             except Exception as e:
-                return {"status": "error", "message": f"Unexpected Error: {str(e)}", "data": []}
+                return {
+                    "status": "error",
+                    "message": f"Unexpected Error: {str(e)}",
+                    "data": [],
+                }, 500  # Assuming a 500 error for unknown issues
 
-    async def get(self, url: str) -> Dict[str, Any]:
+    async def get(self, url: str) -> Tuple[Dict[str, Any], int]:
         return await self._request("GET", url)
 
-    async def post(self, url: str, data: Dict[str, Any] = None) -> Dict[str, Any]:
+    async def post(self, url: str, data: Dict[str, Any] = None) -> Tuple[Dict[str, Any], int]:
         return await self._request("POST", url, data=data)
 
-    async def put(self, url: str, data: Dict[str, Any] = None) -> Dict[str, Any]:
+    async def put(self, url: str, data: Dict[str, Any] = None) -> Tuple[Dict[str, Any], int]:
         return await self._request("PUT", url, data=data)
 
-    async def patch(self, url: str, data: Dict[str, Any] = None) -> Dict[str, Any]:
+    async def patch(self, url: str, data: Dict[str, Any] = None) -> Tuple[Dict[str, Any], int]:
         return await self._request("PATCH", url, data=data)
 
-    async def delete(self, url: str) -> Dict[str, Any]:
+    async def delete(self, url: str) -> Tuple[Dict[str, Any], int]:
         return await self._request("DELETE", url)
+
 
 class HttpStatusCode(Enum):
     # Successful responses
