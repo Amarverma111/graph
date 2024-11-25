@@ -1,49 +1,108 @@
-import aiohttp
-from typing import Dict, Any
 from enum import Enum
-
 import aiohttp
 from typing import Dict, Any, Tuple
+import logging
+
 
 class HttpHelper:
-    def __init__(self, headers: Dict[str, str]):
+    def __init__(self, headers: Dict[str, str], timeout: int = 10, max_retries: int = 3):
+        """
+        Initializes the HTTP helper.
+
+        :param headers: Default headers to be included in all requests.
+        :param timeout: Timeout for requests in seconds.
+        :param max_retries: Number of retries for transient errors.
+        """
         self.headers = headers
+        self.timeout = aiohttp.ClientTimeout(total=timeout)
+        self.max_retries = max_retries
+        self.logger = logging.getLogger(__name__)
 
     async def _request(
         self, method: str, url: str, params: Dict[str, Any] = None, data: Dict[str, Any] = None
     ) -> Tuple[Dict[str, Any], int]:
-        async with aiohttp.ClientSession() as session:
-            try:
-                async with session.request(
-                    method, url, headers=self.headers, params=params, json=data
-                ) as response:
-                    # Return the response JSON along with the status code
-                    return {
-                        "status": "success",
-                        "message":response['message'],
-                        "data": await response.json(),
-                    }, response.status
-            except aiohttp.ClientResponseError as e:
-                return {
-                    "status": "error",
-                    "message": f"HTTP Error: {e.message}",
-                    "data": [],
-                }, e.status
-            except aiohttp.ClientError as e:
-                return {
-                    "status": "error",
-                    "message": f"Request Error: {str(e)}",
-                    "data": [],
-                }, 500  # Assuming a 500 error for client-side issues
-            except Exception as e:
-                return {
-                    "status": "error",
-                    "message": f"Unexpected Error: {str(e)}",
-                    "data": [],
-                }, 500  # Assuming a 500 error for unknown issues
+        """
+        Handles the core HTTP request.
 
-    async def get(self, url: str) -> Tuple[Dict[str, Any], int]:
-        return await self._request("GET", url)
+        :param method: HTTP method (GET, POST, etc.).
+        :param url: The endpoint URL.
+        :param params: Query parameters for the request.
+        :param data: JSON payload for the request.
+        :return: A tuple of the response data and HTTP status code.
+        """
+        retries = 0
+
+        while retries <= self.max_retries:
+            async with aiohttp.ClientSession(timeout=self.timeout) as session:
+                try:
+                    async with session.request(
+                        method, url, headers=self.headers, params=params, json=data
+                    ) as response:
+                        json_data = await response.json()
+                        self.logger.info(f"{method} {url} - Status: {response.status}")
+                        if response.status == HttpStatusCode.OK.value:
+                            return {
+                                "status": "success",
+                                "message": json_data.get("message", ""),
+                                "data": json_data,
+                            }, response.status
+                        elif response.status == HttpStatusCode.CREATED.value:
+                            return {
+                                "status": "success",
+                                "message": json_data.get("message", ""),
+                                "data": json_data,
+                            }, response.status
+                        elif response.status == HttpStatusCode.UNAUTHORIZED.value:
+                            return {
+                                "status": "error",
+                                "message": json_data.get("error").get("message")
+                                ,
+                                "data": [],
+                            }, response.status
+                        else:
+                            self.logger.warning(f"Request failed with status {response.status}: {json_data}")
+                            return {
+                                "status": "error",
+                                "message": json_data.get("error")
+,
+                                "data": [],
+                            }, response.status
+
+                except aiohttp.ClientResponseError as e:
+                    self.logger.error(f"HTTP Error: {e.message}")
+                    return {
+                        "status": "error",
+                        "message": f"HTTP Error: {e.message}",
+                        "data": [],
+                    }, e.status
+
+                except aiohttp.ClientError as e:
+                    self.logger.error(f"Request Error: {str(e)}")
+                    retries += 1
+                    if retries > self.max_retries:
+                        return {
+                            "status": "error",
+                            "message": f"Request Error after retries: {str(e)}",
+                            "data": [],
+                        }, 500
+
+                except Exception as e:
+                    self.logger.error(f"Unexpected Error: {str(e)}")
+                    return {
+                        "status": "error",
+                        "message": f"Unexpected Error: {str(e)}",
+                        "data": [],
+                    }, 500
+
+    async def get(self, url: str, params: Dict[str, Any] = None) -> Tuple[Dict[str, Any], int]:
+        """
+        Sends a GET request.
+
+        :param url: The endpoint URL.
+        :param params: Query parameters for the request.
+        :return: A tuple of the response data and HTTP status code.
+        """
+        return await self._request("GET", url, params=params)
 
     async def post(self, url: str, data: Dict[str, Any] = None) -> Tuple[Dict[str, Any], int]:
         return await self._request("POST", url, data=data)
@@ -54,8 +113,15 @@ class HttpHelper:
     async def patch(self, url: str, data: Dict[str, Any] = None) -> Tuple[Dict[str, Any], int]:
         return await self._request("PATCH", url, data=data)
 
-    async def delete(self, url: str) -> Tuple[Dict[str, Any], int]:
-        return await self._request("DELETE", url)
+    async def delete(self, url: str, params: Dict[str, Any] = None) -> Tuple[Dict[str, Any], int]:
+        """
+        Sends a DELETE request.
+
+        :param url: The endpoint URL.
+        :param params: Query parameters for the request.
+        :return: A tuple of the response data and HTTP status code.
+        """
+        return await self._request("DELETE", url, params=params)
 
 
 class HttpStatusCode(Enum):

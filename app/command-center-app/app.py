@@ -35,7 +35,7 @@ async def login():
         'scope': config['SCOPES'],
         'prompt': 'login'
     }
-    return f"{config['AUTHORIZATION_URL']}?{urlencode(params)}", 200
+    return f"{config['AUTHORIZATION_URL']}?{urlencode(params)}", HttpStatusCode.OK.value
 
 
 @bp.route('/callback', methods=['GET'])
@@ -44,7 +44,7 @@ async def callback():
     # data = await request.get_json()
     code ="M.C542_BAY.2.U.e325a680-11e8-cdf0-c0ef-9df1cb62c362"
     if not code:
-        return "Authorization code not found in the response.", 403
+        return "Authorization code not found in the response.", HttpStatusCode.FORBIDDEN.value
 
     # Step 3: Exchange authorization code for an access token
     token_data = {
@@ -60,9 +60,9 @@ async def callback():
     token_json = response.json()
 
     if 'access_token' not in token_json:
-        return f"Error: {token_json.get('error_description', 'Unknown error')}", 401
+        return f"Error: {token_json.get('error_description', 'Unknown error')}", HttpStatusCode.UNAUTHORIZED.value
     access_token = token_json['access_token']
-    return f"Access Token: {access_token}", 200
+    return f"Access Token: {access_token}", HttpStatusCode.OK.value
 
 
 @bp.route('/health', methods=['GET'])
@@ -89,10 +89,7 @@ async def api_get_meetings():
         access_token = WhoAmIService(headers, config).get_access_token()
         meetings_data,status_code = await MeetingServices(access_token, config).get_meetings(GetMeetingRequest(**data))
         # Construct the successful response with the list of meetings
-        if status_code == 200:
-            return jsonify(meetings_data.model_dump()), status_code
-        else:
-            return jsonify(meetings_data.model_dump()), status_code
+        return jsonify(meetings_data.model_dump()), status_code
     except requests.exceptions.RequestException as e:
         return jsonify({"status": "error", "message": str(e)}), HttpStatusCode.INTERNAL_SERVER_ERROR.value
 
@@ -107,11 +104,7 @@ async def api_create_meeting():
         access_token = WhoAmIService(headers, config).get_access_token()
         # Simulate creating the meeting
         meeting_response_data,status_code = await MeetingServices(access_token, config).create_meeting(CreateMeetingRequest(**data))
-        if status_code == 200:
-            #  Return the response from the create_meeting method, which includes success or error message
-            return jsonify(meeting_response_data.model_dump()), status_code
-        else:
-            return jsonify(meeting_response_data.model_dump()), status_code
+        return jsonify(meeting_response_data.model_dump()), status_code
     except ValidationError as e:
         # Handle validation errors from Pydantic, including missing fields
         return jsonify({"status": "error", "message": "Invalid data: " + str(e)}), HttpStatusCode.BAD_REQUEST.value
@@ -128,23 +121,7 @@ async def api_delete_meeting():
         access_token = WhoAmIService(headers, config).get_access_token()
         # Simulate deleting the meeting
         deletion_response,status_code = await MeetingServices(access_token, config).delete_meeting(DeleteMeetingRequest(**data))
-        if status_code == 200:
-            # Convert deletion_response to a dictionary before returning it
-            response_data = DeleteMeetingResponse(
-                status="success",
-                message="Meeting deleted successfully",
-                data=[deletion_response.model_dump()]  # Convert to dict here
-            )
-
-            return jsonify(response_data.model_dump()), status_code
-        else:
-            response_data = DeleteMeetingResponse(
-                status="error",
-                message="Issue deletion",
-                data=[deletion_response.model_dump()]  # Convert to dict here
-            )
-
-            return jsonify(response_data.model_dump()), status_code
+        return jsonify(deletion_response.model_dump()),status_code
     except ValidationError as e:
         # Handle validation errors from Pydantic, including missing fields
         return jsonify({"status": "error", "message": "Invalid data: " + str(e)}), HttpStatusCode.BAD_REQUEST.value
@@ -160,12 +137,7 @@ async def api_update_meeting():
         # Simulate access token fetching
         access_token = WhoAmIService(headers, config).get_access_token()
         updated_meeting_response,status_code = await MeetingServices(access_token, config).update_meeting(UpdateMeetingRequest(**data))
-        if status_code == 200:
-            # Return the response from the create_meeting method, which includes success or error message
-            return jsonify(updated_meeting_response.model_dump()),status_code
-        else:
-            return jsonify(updated_meeting_response.model_dump()), status_code
-
+        return jsonify(updated_meeting_response.model_dump()), status_code
     except ValidationError as e:
         # Handle validation errors from Pydantic, including missing fields
         return jsonify({"status": "error", "message": "Invalid data: " + str(e)}), HttpStatusCode.BAD_REQUEST.value
@@ -179,12 +151,7 @@ async def api_reschedule_meeting():
         # Simulate access token fetching
         access_token = WhoAmIService(headers, config).get_access_token()
         rescheduled_meeting_response,status_code = await MeetingServices(access_token, config).reschedule_meeting(RescheduleMeetingRequest(**data))
-        if status_code == 200:
-            # Return the response from the create_meeting method, which includes success or error message
-            return jsonify(rescheduled_meeting_response.model_dump()), status_code
-        else:
-            return jsonify(rescheduled_meeting_response.model_dump()), status_code
-
+        return jsonify(rescheduled_meeting_response.model_dump()), status_code
     except ValidationError as e:
         # Handle validation errors from Pydantic, including missing fields
         return jsonify({"status": "error", "message": "Invalid data: " + str(e)}), HttpStatusCode.BAD_REQUEST
@@ -200,10 +167,7 @@ async def api_add_participants():
         # Simulate access token fetching
         access_token = WhoAmIService(headers, config).get_access_token()
         updated_meeting_response,status_code = await MeetingServices(access_token, config).add_participate_update(AddParticipantsRequest(**data))
-        if status_code == 200:
-            return jsonify(updated_meeting_response.model_dump()), status_code
-        else:
-            return jsonify(updated_meeting_response.model_dump()),status_code
+        return jsonify(updated_meeting_response.model_dump()),status_code
     except ValidationError as e:
         # Handle validation errors from Pydantic, including missing fields
         return jsonify({"status": "error", "message": "Invalid data: " + str(e)}), HttpStatusCode.BAD_REQUEST.value

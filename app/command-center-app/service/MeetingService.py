@@ -1,5 +1,8 @@
+from typing import Tuple
+
 from contracts.meeting import MeetingResponse, GetMeetingResponse, DeleteMeetingResponse
-from helper.httpclienthelper import HttpHelper
+from helper.httpclienthelper import HttpHelper, HttpStatusCode
+
 
 class MeetingServices:
     def __init__(self, access_token, config):
@@ -11,7 +14,7 @@ class MeetingServices:
         }
         self.http_helper = HttpHelper(self.headers)
 
-    async def get_meetings(self, GetMeetingRequest) -> GetMeetingResponse:
+    async def get_meetings(self, GetMeetingRequest) -> Tuple[GetMeetingResponse, int]:
         start_date = GetMeetingRequest.start_date
         end_date = GetMeetingRequest.end_date
 
@@ -22,7 +25,7 @@ class MeetingServices:
                 message="Missing required parameters",
                 data=[]
             )
-            return response_data  # Return error response with missing parameters
+            return response_data,HttpStatusCode.NOT_FOUND.value  # Return error response with missing parameters
 
         """Fetch all meetings for the user."""
         url = f"{self.config['GRAPH_API_ENDPOINT']}/me/calendarView?startDateTime={start_date}Z&endDateTime={end_date}Z"
@@ -34,7 +37,7 @@ class MeetingServices:
                 data=[]
             ),status
 
-        events = response.get("value", [])
+        events =response.get('data', {}).get('value', [])
         get_detail = []
         # Loop through each event and insert its data into the get_details list
         for event in events:
@@ -49,7 +52,6 @@ class MeetingServices:
                 ]
             }
             get_detail.append(event_details)
-
         # Return successful response
         response_data = GetMeetingResponse(
             status="success",
@@ -59,7 +61,7 @@ class MeetingServices:
         return response_data ,status # Return the successful response with data
 
 
-    async def create_meeting(self, CreateMeetingRequest) -> MeetingResponse:
+    async def create_meeting(self, CreateMeetingRequest) -> Tuple[MeetingResponse, int]:
         subject = CreateMeetingRequest.subject
         start_time = CreateMeetingRequest.start_time
         end_time = CreateMeetingRequest.end_time
@@ -70,9 +72,9 @@ class MeetingServices:
             response_data = MeetingResponse(
                 status="error",
                 message="Missing required parameters",
-                data=[]
+                data={}
             )
-            return response_data  # Return error response with missing parameters
+            return response_data,HttpStatusCode.NOT_FOUND.value  # Return error response with missing parameters
 
         # Construct the meeting data for the API request
         url = f"{self.config['GRAPH_API_ENDPOINT']}/me/events"
@@ -100,22 +102,22 @@ class MeetingServices:
         # Send the POST request to create the meeting
         # response = requests.post(url, headers=self.headers, json=meeting_data)
         response_data,status = await self.http_helper.post(url, data=meeting_data)
+        # import pdb;pdb.set_trace()
         if response_data.get("status") == "error":
             return MeetingResponse(
                 status="error",
-                message=response_data["message"],
+                message=response_data.get("message").get("message",""),
                 data=dict()
             ),status
 
         return MeetingResponse(
             status="success",
             message="Meeting created successfully",
-            data=response_data
+            data=response_data.get('data', {})
+
         ),status
 
-
-
-    async def update_meeting(self, UpdateMeetingRequest) -> MeetingResponse:
+    async def update_meeting(self, UpdateMeetingRequest) -> Tuple[MeetingResponse, int]:
 
         # Extract fields from the validated request
         meeting_id = UpdateMeetingRequest.meeting_id
@@ -130,7 +132,7 @@ class MeetingServices:
                 status="error",
                 message="Missing required parameters",
                 data={}
-            )
+            ),HttpStatusCode.NOT_FOUND.value
 
         """Update an existing meeting in the user's calendar."""
         url = f"{self.config['GRAPH_API_ENDPOINT']}/me/events/{meeting_id}"
@@ -158,18 +160,18 @@ class MeetingServices:
         if response_data.get("status") == "error":
             return MeetingResponse(
                 status="error",
-                message=response_data["message"],
+                message=response_data.get("message").get("message",""),
                 data=dict()
             ),status
 
         return MeetingResponse(
             status="success",
             message="Meeting created successfully",
-            data=response_data
+            data=response_data.get('data', {})
         ),status
 
 
-    async def delete_meeting(self, DeleteMeetingRequest) -> MeetingResponse:
+    async def delete_meeting(self, DeleteMeetingRequest) -> Tuple[DeleteMeetingResponse, int]:
         """Delete a meeting from the user's calendar."""
         meeting_request = DeleteMeetingRequest  # Get the validated request data
 
@@ -182,7 +184,7 @@ class MeetingServices:
                 status="error",
                 message="Deletion not confirmed because of NO",
                 data=[{"message": "Meeting deletion was not confirmed."}]  # Wrap in a list
-            )
+            ),HttpStatusCode.NOT_FOUND.value
 
         # Construct the URL for deleting the meeting
         url = f"{self.config['GRAPH_API_ENDPOINT']}/me/events/{meeting_id}"
@@ -194,17 +196,17 @@ class MeetingServices:
             # Return success message when meeting is successfully deleted
             return DeleteMeetingResponse(
                 status="error",
-                message=response["message"],
+                message=response.get("message").get("message",""),
                 data=[{}]
             ),status
 
         return DeleteMeetingResponse(
             status="success",
             message="Meeting deleted successfully",
-            data=response
+            data=[response.get('data', {})]
         ),status
 
-    async def reschedule_meeting(self, RescheduleMeetingRequest)->MeetingResponse:
+    async def reschedule_meeting(self, RescheduleMeetingRequest)-> Tuple[MeetingResponse, int]:
 
         # Extract fields from the validated request
         meeting_id = RescheduleMeetingRequest.meeting_id
@@ -216,7 +218,7 @@ class MeetingServices:
                 status="error",
                 message="Missing required parameters",
                 data={}
-            )
+            ),HttpStatusCode.NOT_FOUND.value
         """Update an existing meeting in the user's calendar."""
         url = f"{self.config['GRAPH_API_ENDPOINT']}/me/events/{meeting_id}"
         updated_meeting_data_res = {
@@ -231,21 +233,22 @@ class MeetingServices:
         }
 
         response,status = await self.http_helper.patch(url,data=updated_meeting_data_res)
+        # import pdb;pdb.set_trace()
         if response.get("status") == "error":
             # Return success message when meeting is successfully deleted
             return MeetingResponse(
                 status="error",
-                message=response["message"],
-                data=[]
+                message=response.get("message").get("message",""),
+                data={}
             ),status
 
         return MeetingResponse(
             status="success",
             message="Meeting deleted successfully",
-            data=response
+            data=response.get('data', {})
         ),status
 
-    async def add_participate_update(self, AddParticipantsRequest)-> MeetingResponse:
+    async def add_participate_update(self, AddParticipantsRequest)-> Tuple[MeetingResponse, int]:
         # Extract fields from the validated request
         meeting_id = AddParticipantsRequest.meeting_id
         subject = AddParticipantsRequest.subject
@@ -257,7 +260,7 @@ class MeetingServices:
                 status="error",
                 message="Missing required parameters",
                 data={}
-            )
+            ),HttpStatusCode.NOT_FOUND.value
 
         """Update an existing meeting in the user's calendar."""
 
@@ -280,12 +283,12 @@ class MeetingServices:
             # Return success message when meeting is successfully deleted
             return MeetingResponse(
                 status="error",
-                message=response["message"],
-                data=[]
+                message=response.get("message").get("message",""),
+                data={}
             ),status
 
         return MeetingResponse(
             status="success",
             message="Meeting deleted successfully",
-            data=response
+            data=response.get('data', {})
         ),status
