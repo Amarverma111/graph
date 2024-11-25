@@ -208,10 +208,6 @@ async def api_add_participants():
         # Handle validation errors from Pydantic, including missing fields
         return jsonify({"status": "error", "message": "Invalid data: " + str(e)}), HttpStatusCode.BAD_REQUEST.value
 
-    except requests.exceptions.RequestException as e:
-        # Handle any request exceptions
-        return jsonify({"status": "error", "message": str(e)}), HttpStatusCode.INTERNAL_SERVER_ERROR.value
-
 
 
 # # EMAIL START
