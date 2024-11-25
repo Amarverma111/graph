@@ -72,13 +72,13 @@ async def health_checkup():
             status="success",
             message="API IS WORKING FINE !",
             data={})
-        return jsonify(response.dict()), HttpStatusCode.OK.value
+        return jsonify(response.model_dump()), HttpStatusCode.OK.value
     except Exception as e:
         response = MeetingResponse(
             status="error",
             message="API IS NOT WORKING!",
             data={})
-        return jsonify(response.dict()), HttpStatusCode.INTERNAL_SERVER_ERROR.value
+        return jsonify(response.model_dump()), HttpStatusCode.INTERNAL_SERVER_ERROR.value
 
 
 @bp.route('/get_meetings', methods=['GET'])
@@ -90,9 +90,9 @@ async def api_get_meetings():
         meetings_data,status_code = await MeetingServices(access_token, config).get_meetings(GetMeetingRequest(**data))
         # Construct the successful response with the list of meetings
         if status_code == 200:
-            return jsonify(meetings_data.dict()), status_code
+            return jsonify(meetings_data.model_dump()), status_code
         else:
-            return jsonify(meetings_data.dict()), status_code
+            return jsonify(meetings_data.model_dump()), status_code
     except requests.exceptions.RequestException as e:
         return jsonify({"status": "error", "message": str(e)}), HttpStatusCode.INTERNAL_SERVER_ERROR.value
 
@@ -109,9 +109,9 @@ async def api_create_meeting():
         meeting_response_data,status_code = await MeetingServices(access_token, config).create_meeting(CreateMeetingRequest(**data))
         if status_code == 200:
             #  Return the response from the create_meeting method, which includes success or error message
-            return jsonify(meeting_response_data.dict()), status_code
+            return jsonify(meeting_response_data.model_dump()), status_code
         else:
-            return jsonify(meeting_response_data.dict()), status_code
+            return jsonify(meeting_response_data.model_dump()), status_code
     except ValidationError as e:
         # Handle validation errors from Pydantic, including missing fields
         return jsonify({"status": "error", "message": "Invalid data: " + str(e)}), HttpStatusCode.BAD_REQUEST.value
@@ -133,18 +133,18 @@ async def api_delete_meeting():
             response_data = DeleteMeetingResponse(
                 status="success",
                 message="Meeting deleted successfully",
-                data=[deletion_response.dict()]  # Convert to dict here
+                data=[deletion_response.model_dump()]  # Convert to dict here
             )
 
-            return jsonify(response_data.dict()), status_code
+            return jsonify(response_data.model_dump()), status_code
         else:
             response_data = DeleteMeetingResponse(
                 status="error",
                 message="Issue deletion",
-                data=[deletion_response.dict()]  # Convert to dict here
+                data=[deletion_response.model_dump()]  # Convert to dict here
             )
 
-            return jsonify(response_data.dict()), status_code
+            return jsonify(response_data.model_dump()), status_code
     except ValidationError as e:
         # Handle validation errors from Pydantic, including missing fields
         return jsonify({"status": "error", "message": "Invalid data: " + str(e)}), HttpStatusCode.BAD_REQUEST.value
@@ -162,9 +162,9 @@ async def api_update_meeting():
         updated_meeting_response,status_code = await MeetingServices(access_token, config).update_meeting(UpdateMeetingRequest(**data))
         if status_code == 200:
             # Return the response from the create_meeting method, which includes success or error message
-            return jsonify(updated_meeting_response.dict()),status_code
+            return jsonify(updated_meeting_response.model_dump()),status_code
         else:
-            return jsonify(updated_meeting_response.dict()), status_code
+            return jsonify(updated_meeting_response.model_dump()), status_code
 
     except ValidationError as e:
         # Handle validation errors from Pydantic, including missing fields
@@ -181,9 +181,9 @@ async def api_reschedule_meeting():
         rescheduled_meeting_response,status_code = await MeetingServices(access_token, config).reschedule_meeting(RescheduleMeetingRequest(**data))
         if status_code == 200:
             # Return the response from the create_meeting method, which includes success or error message
-            return jsonify(rescheduled_meeting_response.dict()), status_code
+            return jsonify(rescheduled_meeting_response.model_dump()), status_code
         else:
-            return jsonify(rescheduled_meeting_response.dict()), status_code
+            return jsonify(rescheduled_meeting_response.model_dump()), status_code
 
     except ValidationError as e:
         # Handle validation errors from Pydantic, including missing fields
@@ -201,9 +201,9 @@ async def api_add_participants():
         access_token = WhoAmIService(headers, config).get_access_token()
         updated_meeting_response,status_code = await MeetingServices(access_token, config).add_participate_update(AddParticipantsRequest(**data))
         if status_code == 200:
-            return jsonify(updated_meeting_response.dict()), status_code
+            return jsonify(updated_meeting_response.model_dump()), status_code
         else:
-            return jsonify(updated_meeting_response.dict()),status_code
+            return jsonify(updated_meeting_response.model_dump()),status_code
     except ValidationError as e:
         # Handle validation errors from Pydantic, including missing fields
         return jsonify({"status": "error", "message": "Invalid data: " + str(e)}), HttpStatusCode.BAD_REQUEST.value
@@ -236,7 +236,7 @@ async def api_add_participants():
 #             message="Email retrieved successfully",
 #             data=get_email
 #         )
-#         return jsonify(response_data.dict()), 200
+#         return jsonify(response_data.model_dump()), 200
 #
 #     except requests.exceptions.RequestException as e:
 #         # Handle request exceptions
