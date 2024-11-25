@@ -1,3 +1,5 @@
+from enum import Enum
+
 import aiohttp
 from typing import Dict, Any
 

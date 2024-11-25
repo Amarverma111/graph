@@ -40,7 +40,7 @@ async def login():
 async def callback():
     # Step 2: Handle the response from Microsoft
     # data = await request.get_json()
-    code ="M.C537_SN1.2.U.516cb6e7-0d60-2111-508d-73342b9fb5c0"
+    code ="M.C537_SN1.2.U.989caa4a-5999-1b71-b6b2-eb0e93787bda"
     if not code:
         return "Authorization code not found in the response.", 403
 
