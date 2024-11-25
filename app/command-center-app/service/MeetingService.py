@@ -1,5 +1,5 @@
 from contracts.meeting import MeetingResponse, GetMeetingResponse, DeleteMeetingResponse
-from Helper.HttpHelper import HttpHelper
+from helper.httpclienthelper import HttpHelper
 
 class MeetingServices:
     def __init__(self, access_token, config):
@@ -26,13 +26,13 @@ class MeetingServices:
 
         """Fetch all meetings for the user."""
         url = f"{self.config['GRAPH_API_ENDPOINT']}/me/calendarView?startDateTime={start_date}Z&endDateTime={end_date}Z"
-        response = await self.http_helper.get(url)
+        response,status = await self.http_helper.get(url)
         if response.get("status") == "error":
             return GetMeetingResponse(
                 status="error",
                 message=response["message"],
                 data=[]
-            )
+            ),status
 
         events = response.get("value", [])
         get_detail = []
@@ -56,7 +56,7 @@ class MeetingServices:
             message="Meetings retrieved successfully",
             data=get_detail
         )
-        return response_data  # Return the successful response with data
+        return response_data ,status # Return the successful response with data
 
 
     async def create_meeting(self, CreateMeetingRequest) -> MeetingResponse:
@@ -99,20 +99,19 @@ class MeetingServices:
 
         # Send the POST request to create the meeting
         # response = requests.post(url, headers=self.headers, json=meeting_data)
-        response_data = await self.http_helper.post(url, data=meeting_data)
+        response_data,status = await self.http_helper.post(url, data=meeting_data)
         if response_data.get("status") == "error":
             return MeetingResponse(
                 status="error",
                 message=response_data["message"],
                 data=dict()
-            )
+            ),status
 
         return MeetingResponse(
             status="success",
             message="Meeting created successfully",
             data=response_data
-        )
-
+        ),status
 
 
 
@@ -155,19 +154,19 @@ class MeetingServices:
                 } for name, email in participants
             ]
         }
-        response_data = await self.http_helper.patch(url, data=updated_meeting_data)
+        response_data,status = await self.http_helper.patch(url, data=updated_meeting_data)
         if response_data.get("status") == "error":
             return MeetingResponse(
                 status="error",
                 message=response_data["message"],
                 data=dict()
-            )
+            ),status
 
         return MeetingResponse(
             status="success",
             message="Meeting created successfully",
             data=response_data
-        )
+        ),status
 
 
     async def delete_meeting(self, DeleteMeetingRequest) -> MeetingResponse:
@@ -189,7 +188,7 @@ class MeetingServices:
         url = f"{self.config['GRAPH_API_ENDPOINT']}/me/events/{meeting_id}"
 
         # Send the DELETE request to remove the meeting
-        response = await self.http_helper.delete(url)
+        response,status = await self.http_helper.delete(url)
         # Check for successful deletion (status code 204)
         if response.get("status") == "error":
             # Return success message when meeting is successfully deleted
@@ -197,13 +196,13 @@ class MeetingServices:
                 status="error",
                 message=response["message"],
                 data=[{}]
-            )
+            ),status
 
         return DeleteMeetingResponse(
             status="success",
             message="Meeting deleted successfully",
             data=response
-        )
+        ),status
 
     async def reschedule_meeting(self, RescheduleMeetingRequest)->MeetingResponse:
 
@@ -231,20 +230,20 @@ class MeetingServices:
             },
         }
 
-        response = await self.http_helper.patch(url,data=updated_meeting_data_res)
+        response,status = await self.http_helper.patch(url,data=updated_meeting_data_res)
         if response.get("status") == "error":
             # Return success message when meeting is successfully deleted
             return MeetingResponse(
                 status="error",
                 message=response["message"],
                 data=[]
-            )
+            ),status
 
         return MeetingResponse(
             status="success",
             message="Meeting deleted successfully",
             data=response
-        )
+        ),status
 
     async def add_participate_update(self, AddParticipantsRequest)-> MeetingResponse:
         # Extract fields from the validated request
@@ -276,17 +275,17 @@ class MeetingServices:
             ]
         }
 
-        response = await self.http_helper.patch(url, data=add_participate)
+        response,status = await self.http_helper.patch(url, data=add_participate)
         if response.get("status") == "error":
             # Return success message when meeting is successfully deleted
             return MeetingResponse(
                 status="error",
                 message=response["message"],
                 data=[]
-            )
+            ),status
 
         return MeetingResponse(
             status="success",
             message="Meeting deleted successfully",
             data=response
-        )
+        ),status
