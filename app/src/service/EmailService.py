@@ -148,18 +148,36 @@ class EmailServices:
         body = email_request.body
         recipient_email = email_request.recipient_email
         attachments = email_request.attachments
-        attachment_data = []
-        for file_path in attachments:
-            # Read and base64 encode each file
-            with open(file_path, "rb") as f:
-                file_content = base64.b64encode(f.read()).decode('utf-8')
+
+        # Validate required parameters
         if not all([body, subject, recipient_email, attachments]):
             response_data = EmailResponse(
                 status="error",
                 message="Missing required parameters",
                 data={}
             )
-            return response_data,HttpStatusCode.NOT_FOUND.value
+            return response_data, HttpStatusCode.NOT_FOUND.value
+
+        # Process attachments
+        attachment_data = []
+        for file_path in attachments:
+            try:
+                with open(file_path, "rb") as f:
+                    file_content = base64.b64encode(f.read()).decode('utf-8')
+                    attachment_data.append({
+                        "@odata.type": "#microsoft.graph.fileAttachment",
+                        "name": file_path.split("/")[-1],  # Extract filename from the path
+                        "contentBytes": file_content  # Base64 encoded content
+                    })
+            except Exception as e:
+                response_data = EmailResponse(
+                    status="error",
+                    message=f"Failed to process attachment {file_path}: {str(e)}",
+                    data={}
+                )
+                return response_data, HttpStatusCode.BAD_REQUEST.value
+
+        # Prepare email data
         url = f"{self.config['GRAPH_API_ENDPOINT']}/me/sendMail"
         email_data = {
             "message": {
@@ -175,29 +193,25 @@ class EmailServices:
                         }
                     }
                 ],
-                "attachments": [
-                    {
-                        "@odata.type": "#microsoft.graph.fileAttachment",
-                        "name": "example.pdf",  # The name that the recipient will see
-                        "contentBytes": file_content  # Base64 encoded PDF content
-                    }
-                ]
+                "attachments": attachment_data
             },
             "saveToSentItems": "true"  # Save the sent email to Sent Items
         }
-        response_data,status = await self.http_helper.post(url, data=email_data)
+
+        # Send the email
+        response_data, status = await self.http_helper.post(url, data=email_data)
         if response_data.get("status") == "error":
             return EmailResponse(
                 status="error",
-                message=response_data.get("message").get("message",""),
-                data=dict()
-            ),status
+                message=response_data.get("message", {}).get("message", ""),
+                data={}
+            ), status
 
         return EmailResponse(
             status="success",
             message="Attachment sent successfully",
             data=response_data
-        ),status
+        ), status
 
     async def email_forward(self, ForwardEmailRequest) -> Tuple[EmailResponse, int]:
         forward_request = ForwardEmailRequest
