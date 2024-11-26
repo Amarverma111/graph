@@ -33,7 +33,7 @@ class MeetingServices:
         if response.get("status") == "error":
             return GetMeetingResponse(
                 status="error",
-                message=response["message"],
+                message=response.get("message").get("message",""),
                 data=[]
             ),status
 
@@ -55,7 +55,7 @@ class MeetingServices:
         # Return successful response
         response_data = GetMeetingResponse(
             status="success",
-            message="Meetings retrieved successfully",
+            message=response.get("message").get("message",""),
             data=get_detail
         )
         return response_data ,status # Return the successful response with data

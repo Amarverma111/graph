@@ -18,6 +18,11 @@ class Body(BaseModel):
     contentType: str
     content: str
 
+class GetEmailResponse(BaseModel):
+    status: str
+    message: str
+    data: list
+
 class Message(BaseModel):
     subject: str
     body: Body
@@ -28,6 +33,11 @@ class Message(BaseModel):
 class CreateEmailRequest(BaseModel):
     message: Message
 
+class CreateEmailResponse(BaseModel):
+    status: str
+    message: str
+    data: str
+
 class EmailResponse(BaseModel):
     status: str
     message: str
@@ -36,6 +46,10 @@ class EmailResponse(BaseModel):
 class DeleteEmailRequest(BaseModel):
     email_id: str
     confirm: str
+class DeleteEmailResponse(BaseModel):
+    status: str
+    message: str
+    data: List[dict]
 
 class SendEmailRequest(BaseModel):
     subject: str
