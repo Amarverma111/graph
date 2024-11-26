@@ -25,13 +25,14 @@ class EmailServices:
         recipients = [recipient.emailAddress.address for recipient in email_request.message.toRecipients]
         ccRecipients = email_request.message.ccRecipients
         bccRecipients = email_request.message.bccRecipients
+        # import pdb;pdb.set_trace()
         if not all([subject, body_content, recipients, ccRecipients, bccRecipients]):
             response_data = MessageSentResponse(
                 status="error",
                 message="Missing required parameters",
                 data=""
-            ),
-            return response_data , HttpStatusCode.NOT_FOUND.value
+            )
+            return response_data , 403
         """Create a new meeting in the user's calendar."""
         url = f"{self.config['GRAPH_API_ENDPOINT']}/me/sendMail"
         email_data = {
@@ -60,6 +61,7 @@ class EmailServices:
                                                       bccRecipients
                                                       ]
         response_data, status = await self.http_helper.post(url, data=email_data)
+        # import pdb;pdb.set_trace()
         if response_data.get("status") == "error":
             return MessageSentResponse(
                 status="error",
@@ -68,7 +70,7 @@ class EmailServices:
             ), status
         return MessageSentResponse(
             status="success",
-            message=response_data.get("message").get("message", ""),
+            message="Email sent successfully",
             data="Email successfully Sent"
         ), status
 
@@ -92,7 +94,7 @@ class EmailServices:
                 message=response.get("message").get("message",""),
                 data=[]
             ),status
-        email = response.get("value", [])
+        email = response.get('data', {}).get('value', [])
         AllEmails = []
         for email in email:
             # Collect email details
@@ -104,9 +106,10 @@ class EmailServices:
                 "bodyPreview": email.get("bodyPreview", "No Preview")
             }
             AllEmails.append(email_data)
+
         response_data = GetEmailResponse(
             status="success",
-            message=response.get("message").get("message",""),
+            message="Email retrieved successfully",
             data=AllEmails
         )
         return response_data,status
@@ -192,7 +195,7 @@ class EmailServices:
 
         return EmailResponse(
             status="success",
-            message=response_data.get("message").get("message",""),
+            message="Attachment sent successfully",
             data=response_data
         ),status
 
@@ -214,9 +217,10 @@ class EmailServices:
         global forward_response, forward_url
         url = f"{self.config['GRAPH_API_ENDPOINT']}/me/messages/{email_id}"
         response,status = await self.http_helper.get(url)
+        # import pdb;pdb.set_trace()
         if response.get("status") == "error":
             raise Exception(f"Failed to fetch the email: {response.text}")
-        email = response.json()
+        email = response.get("data")
         # Prepare the forwarded email content
         forwarded_subject = f"{subject_prefix} {email['subject']}"
         forwarded_body = f"Forwarded message:\n\n{email['bodyPreview']}\n\n--- Original Message ---\n{email['body']['content']}"
@@ -247,16 +251,16 @@ class EmailServices:
         while True:
             try:
                 # Corrected method call: remove the extra 'self' argument
-                response,status = self.repeater_api(self.config, forward_email_data)
-                if response.get("status") == "error":
+                response,status =  await self.repeater_api(forward_email_data)
+                if status == 429:
                     return EmailResponse(
                         status="error",
-                        message=response["message"],
+                        message= response.get("error").get("message",""),
                         data={}
                     ),status
                 return EmailResponse(
                     status="success",
-                    message=response["message"],
+                    message="Forward sent successfully",
                     data=response
                 ),status
             except requests.exceptions.RequestException as e:
@@ -268,7 +272,6 @@ class EmailServices:
     async def repeater_api(self, forward_email_data):
         forward_url = f"{self.config['GRAPH_API_ENDPOINT']}/me/sendMail"
         forward_response = requests.post(forward_url, json=forward_email_data, headers=self.headers)
-        # forward_response.raise_for_status()
         return forward_response.json(),forward_response.status_code
 
     # async def reply_email(self, email_id, reply_body, config):
@@ -305,17 +308,16 @@ class EmailServices:
     #         else:
     #             return response
 
-    async def send_reply(self, ReplyEmailRequest) -> Tuple[MessageSentResponse, int]:
+    async def send_reply(self, ReplyEmailRequest) -> Tuple[CreateEmailResponse, int]:
         # Access individual attributes from the validated model
         email_id = ReplyEmailRequest.email_id
         reply_body = ReplyEmailRequest.reply_body
         if not all([email_id, reply_body]):
-            response_data = CreateEmailResponse(
+            return CreateEmailResponse(
                 status="error",
                 message="Missing required parameters",
                 data=""
-            )
-            return response_data,HttpStatusCode.NOT_FOUND.value
+            ),403
         """Create a new reply to the user's email."""
         url = f"{self.config['GRAPH_API_ENDPOINT']}/me/messages/{email_id}/reply"
 
@@ -330,13 +332,13 @@ class EmailServices:
         }
         response_data,status = await self.http_helper.post(url, data=data)
         if response_data.get("status") == "error":
-            return MessageSentResponse(
+            return CreateEmailResponse(
                 status="error",
                 message=response_data.get("message").get("message",""),
                 data="Reply not sent"
             ),status
-        return MessageSentResponse(
+        return CreateEmailResponse(
             status="success",
-            message=response_data.get("message").get("message",""),
+            message="reply response",
             data="Reply sent"
         ),status

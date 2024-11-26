@@ -181,9 +181,9 @@ async def api_get_email():
         headers = request.headers
         access_token = WhoAmIService(headers, config).get_access_token()
         # Simulate fetching access token
-        get_email = await EmailServices(access_token, config).get_email(GetEmailRequest(**data))
+        get_email,status = await EmailServices(access_token, config).get_email(GetEmailRequest(**data))
 
-        return jsonify(get_email.model_dump()), HttpStatusCode.OK.value
+        return jsonify(get_email.model_dump()), status
     except requests.exceptions.RequestException as e:
         return jsonify({"status": "error", "message": str(e)}), HttpStatusCode.INTERNAL_SERVER_ERROR.value
 
@@ -196,8 +196,8 @@ async def create_email():
         headers = request.headers
         access_token = WhoAmIService(headers, config).get_access_token()
         # Make the API call to send the email (example)
-        email_sent = await EmailServices(access_token,config).send_email(CreateEmailRequest(**data))
-        return jsonify(email_sent.model_dump()), HttpStatusCode.OK.value
+        email_sent,status = await EmailServices(access_token,config).send_email(CreateEmailRequest(**data))
+        return jsonify(email_sent.model_dump()), status
     except ValidationError as e:
         # Handle validation errors from Pydantic, including missing fields
         return jsonify({"status": "error", "message": "Invalid data: " + str(e)}), HttpStatusCode.BAD_REQUEST.value
@@ -210,8 +210,8 @@ async def reply_email():
         headers = request.headers
         access_token = WhoAmIService(headers, config).get_access_token()
         # Simulate sending the email
-        reply_sent = await EmailServices(access_token,config).send_reply(ReplyEmailRequest(**data))
-        return jsonify(reply_sent.model_dump()), HttpStatusCode.OK.value
+        reply_sent,status = await EmailServices(access_token,config).send_reply(ReplyEmailRequest(**data))
+        return jsonify(reply_sent.model_dump()), status
 
     except ValidationError as e:
         # Handle validation errors from Pydantic
@@ -226,8 +226,8 @@ async def api_delete_email():
         # Simulate access token fetching
         access_token = WhoAmIService(headers, config).get_access_token()
         # Simulate deleting the meeting
-        deletion_response = await EmailServices(access_token,config).delete_email(DeleteEmailRequest(**data))
-        return  jsonify([deletion_response.model_dump()]), HttpStatusCode.OK.value
+        deletion_response,status = await EmailServices(access_token,config).delete_email(DeleteEmailRequest(**data))
+        return  jsonify([deletion_response.model_dump()]), status
     except ValidationError as e:
         # Handle validation errors from Pydantic, including missing fields
         return jsonify({"status": "error", "message": "Invalid data: " + str(e)}),  HttpStatusCode.BAD_REQUEST.value
@@ -241,16 +241,8 @@ async def forwarding_email():
         headers = request.headers
         access_token = WhoAmIService(headers, config).get_access_token()
         # Simulate sending the email
-        send_forward_response = await EmailServices(access_token,config).email_forward(ForwardEmailRequest(**data))
-
-        # Construct a success response
-        response_data = MeetingResponse(
-            status="success",
-            message="Forward sent successfully",
-            data=send_forward_response
-        )
-
-        return jsonify(response_data.model_dump()), 200
+        send_forward_response,status = await EmailServices(access_token,config).email_forward(ForwardEmailRequest(**data))
+        return jsonify(send_forward_response.model_dump()), status
 
     except requests.exceptions.RequestException as e:
         return jsonify({"status": "error", "message": str(e)}), HttpStatusCode.INTERNAL_SERVER_ERROR.value
@@ -265,8 +257,8 @@ async def email_with_attachment():
         # Simulate access token fetching
         access_token = WhoAmIService(headers, config).get_access_token()
         # Simulate sending the email
-        send_attachment_response = await EmailServices(access_token,config).email_attachment(SendEmailRequest(**data))
-        return jsonify(send_attachment_response.model_dump()), HttpStatusCode.OK.value
+        send_attachment_response,status = await EmailServices(access_token,config).email_attachment(SendEmailRequest(**data))
+        return jsonify(send_attachment_response.model_dump()), status
 
     except requests.exceptions.RequestException as e:
         return jsonify({"status": "error", "message": str(e)}), HttpStatusCode.INTERNAL_SERVER_ERROR.value
